@@ -1185,6 +1185,47 @@ def _bounds_center(bounds):
 def _opts_hash(opts: dict) -> str:
     return hashlib.md5(json.dumps(opts, sort_keys=True).encode()).hexdigest()[:10]
 
+# ── Results Cache ───────────────────────────────────────────────────────────────
+# Caches the fully-scored GeoJSON output so that an identical recalculation
+# (same bounds, resolution, layer opts, weights, lookahead) returns instantly
+# without re-fetching data or re-scoring cells.
+_RESULTS_TTL       = 6 * 3600   # match most volatile layer (precip = 6 h)
+_results_cache: dict = {}
+_results_lock        = threading.Lock()
+
+def _payload_hash(bounds, resolution, layers, weights, lookahead_weeks) -> str:
+    payload = {
+        'bounds':          bounds,
+        'resolution':      resolution,
+        'layers':          layers,
+        'weights':         weights,
+        'lookahead_weeks': lookahead_weeks,
+    }
+    return hashlib.md5(json.dumps(payload, sort_keys=True).encode()).hexdigest()
+
+def results_cache_get(phash: str, bounds: dict):
+    now = datetime.datetime.utcnow()
+    clat, clon = _bounds_center(bounds)
+    with _results_lock:
+        entry = _results_cache.get(phash)
+        if entry is None:
+            return None
+        age  = (now - entry['fetched_at']).total_seconds()
+        dist = haversine_miles(clat, clon, entry['center'][0], entry['center'][1])
+        if age > _RESULTS_TTL or dist > CACHE_RADIUS_MILES:
+            del _results_cache[phash]
+            return None
+        print(f"[cache] results hit (age {age/3600:.1f}h, center {dist:.1f} mi away)")
+        return entry['data']
+
+def results_cache_set(phash: str, bounds: dict, data: dict):
+    with _results_lock:
+        _results_cache[phash] = {
+            'center':     _bounds_center(bounds),
+            'fetched_at': datetime.datetime.utcnow(),
+            'data':       data,
+        }
+
 def cache_get(layer: str, bounds: dict, opts: dict):
     key   = (layer, _opts_hash(opts))
     now   = datetime.datetime.utcnow()
@@ -1338,11 +1379,22 @@ def calculate():
     lookahead_weeks = max(0, int(body.get('lookahead_weeks', 0)))
     target_date    = datetime.date.today() + datetime.timedelta(weeks=lookahead_weeks)
 
+    # ── Results cache: exact-match shortcut ───────────────────────────────────
+    # If bounds, resolution, every layer option, weights, and lookahead are all
+    # identical to a recent run, skip fetching and scoring entirely.
+    phash = _payload_hash(bounds, resolution, layers, weights, lookahead_weeks)
+    cached_result = results_cache_get(phash, bounds)
+    if cached_result is not None:
+        return jsonify(cached_result)
+
     grid = create_grid(bounds, resolution)
     if not grid:
         return jsonify({'type': 'FeatureCollection', 'features': [], 'meta': {}})
 
-    # Fetch all enabled layers in parallel — use cache where available
+    # ── Per-layer data cache + fetch ──────────────────────────────────────────
+    # Each layer is keyed by (layer_name, hash(layer_opts)).  Only layers whose
+    # opts changed (or whose TTL expired / viewport moved too far) are re-fetched.
+    # Fetching is I/O-bound (HTTP), so use a thread pool — no subprocess overhead.
     layer_data = {}
     FETCHERS = {
         'inat':      (fetch_inat,      lambda: (bounds, layers['inat'])),
@@ -1352,8 +1404,9 @@ def calculate():
         'elevation': (fetch_elevation, lambda: (grid,   layers['elevation'])),
         'soil':      (fetch_soil,      lambda: (bounds, layers['soil'])),
     }
-    with concurrent.futures.ProcessPoolExecutor(max_workers=CPU_COUNT, mp_context=multiprocessing.get_context('spawn')) as pool:
-        futures = {}
+
+    futures = {}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=len(FETCHERS)) as tpool:
         for k, (fn, args_fn) in FETCHERS.items():
             if not layers.get(k, {}).get('enabled'):
                 continue
@@ -1361,7 +1414,7 @@ def calculate():
             if cached is not None:
                 layer_data[k] = cached
             else:
-                futures[k] = pool.submit(fn, *args_fn())
+                futures[k] = tpool.submit(fn, *args_fn())
         for k, f in futures.items():
             try:
                 data = f.result(timeout=90)
@@ -1377,15 +1430,16 @@ def calculate():
         layer_name   = enabled_data_layers[0]
         raw_features = _build_raw_geojson(layer_name, layer_data.get(layer_name))
         print(f"[raw] {layer_name} → {len(raw_features)} features")
-        return jsonify({
+        result = {
             'type':     'FeatureCollection',
             'features': raw_features,
             'meta':     {'raw_layer': layer_name, 'count': len(raw_features), 'target_date': target_date.isoformat()},
-        })
+        }
+        results_cache_set(phash, bounds, result)
+        return jsonify(result)
 
     # Score each grid cell across CPU cores using multiple processes.
     # ProcessPoolExecutor bypasses the GIL for true parallelism on CPU-bound work.
-    # 'fork' context avoids re-importing all modules in each worker (fast startup).
     ctx         = multiprocessing.get_context('spawn')
     worker_args = [(cell, layer_data, layers, weights, target_date) for cell in grid]
     chunksize   = max(1, len(grid) // (CPU_COUNT * 4))
@@ -1394,11 +1448,13 @@ def calculate():
 
     total_obs = sum(1 for f in features if f['properties']['probability'] >= 30)
     print(f"[calc] {len(features)} cells, {total_obs} cells ≥30%")
-    return jsonify({
+    result = {
         'type':     'FeatureCollection',
         'features': features,
         'meta':     {'cells': len(features), 'resolution_miles': resolution, 'target_date': target_date.isoformat()},
-    })
+    }
+    results_cache_set(phash, bounds, result)
+    return jsonify(result)
 
 @app.route('/')
 def index():

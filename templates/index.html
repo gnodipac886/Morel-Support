@@ -87,7 +87,8 @@
     transition: width 0.2s ease, min-width 0.2s ease, background 0.2s, border-color 0.2s;
     z-index: 1000;
   }
-  #sidebar.collapsed { width: 0; min-width: 0; border-right: none; }
+  #sidebar.collapsed { width: 0; min-width: 0; border-right: none; overflow: hidden; }
+  #sidebar.collapsed #sidebar-footer { display: none; }
 
   #sidebar-header {
     padding: 12px 14px 10px;
@@ -107,7 +108,9 @@
   }
   #mode-toggle-btn:hover { background: var(--mode-btn-hov); }
 
-  #sidebar-body { overflow-y: auto; flex: 1; padding: 10px 12px; display: flex; flex-direction: column; gap: 9px; }
+  #sidebar-body { overflow-y: auto; flex: 1; min-height: 0; padding: 10px 12px; }
+  #sidebar-body > * { margin-bottom: 9px; }
+  #sidebar-body > *:last-child { margin-bottom: 0; }
 
   /* ── Cards ───────────────────────────────────────────────────────── */
   .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; transition: background 0.2s, border-color 0.2s; }
@@ -175,6 +178,14 @@
   #weights-note { font-size: 10px; color: var(--text-dim); margin-top: 6px; }
 
   /* ── Calculate button ─────────────────────────────────────────────── */
+  #sidebar-footer {
+    flex-shrink: 0;
+    padding: 10px 12px;
+    border-top: 1px solid var(--border);
+    background: var(--sidebar-bg);
+    box-shadow: 0 -4px 12px rgba(0,0,0,0.25);
+    transition: background 0.2s, border-color 0.2s;
+  }
   #calc-btn {
     background: linear-gradient(135deg, #2a7a38, #3a9e4a);
     color: #fff; border: none; border-radius: 8px; padding: 13px;
@@ -464,16 +475,16 @@
 
     <!-- Custom Weights -->
     <div id="weights-card">
-      <h3>Layer Weights</h3>
+      <h3>Layer Weights <button onclick="allLayers()" style="float:right;font-size:10px;padding:2px 7px;background:var(--accent);color:#fff;border:none;border-radius:3px;cursor:pointer;text-transform:uppercase;letter-spacing:0.4px;font-weight:700;">activate all</button></h3>
       <div id="weight-rows"></div>
       <div id="weights-note">Weights renormalize to enabled layers only.</div>
     </div>
 
-    <!-- Calculate -->
-    <button id="calc-btn" onclick="calculate()">Calculate Probability</button>
-    <div style="height:8px"></div>
-
   </div><!-- /sidebar-body -->
+
+  <div id="sidebar-footer">
+    <button id="calc-btn" onclick="calculate()">Calculate Probability</button>
+  </div>
 </div><!-- /sidebar -->
 
 <!-- ── Map area ───────────────────────────────────────────────────────── -->
@@ -606,6 +617,13 @@ const ALL_LAYER_IDS = ['inat', 'precip', 'fires', 'trees', 'season', 'elevation'
 function soloLayer(id) {
   ALL_LAYER_IDS.forEach(lid => {
     document.getElementById('en-' + lid).checked = (lid === id);
+  });
+  onLayerToggle();
+}
+
+function allLayers() {
+  ALL_LAYER_IDS.forEach(lid => {
+    document.getElementById('en-' + lid).checked = true;
   });
   onLayerToggle();
 }
