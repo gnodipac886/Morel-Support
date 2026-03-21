@@ -815,6 +815,78 @@ def _fetch_nlcd_bbox(bounds):
     return results
 
 
+
+def fetch_urban_place_nodes(bounds):
+    """Query OSM Overpass for city/town/suburb nodes inside bounds.
+
+    Returns a list of dicts: {lat, lon, name, radius_miles}
+    radius_miles is estimated from the place type and population tag so we can
+    do a simple distance-based filter per grid cell (no per-cell HTTP calls).
+    """
+    n, s, e, w = bounds['north'], bounds['south'], bounds['east'], bounds['west']
+    # Add a small buffer so places just outside the viewport still mask cells
+    pad = 0.15
+    bbox = f"{s - pad},{w - pad},{n + pad},{e + pad}"
+    query = f"""
+[out:json][timeout:30];
+(
+  node["place"~"^(city|town)$"]({bbox});
+);
+out body;
+"""
+    try:
+        req = urllib.request.Request(
+            'https://overpass-api.de/api/interpreter',
+            data=query.encode(),
+            headers={'Content-Type': 'application/x-www-form-urlencoded',
+                     'User-Agent': 'MushroomMapApp/1.0'},
+            method='POST',
+        )
+        with urllib.request.urlopen(req, timeout=35) as resp:
+            data = json.loads(resp.read())
+    except Exception as e:
+        print(f"[urban] Overpass error: {e}")
+        return None  # None = don't filter (network failure), [] = no places found
+
+    places = []
+    for el in data.get('elements', []):
+        tags = el.get('tags', {})
+        place = tags.get('place', '')
+        try:
+            pop = int(tags.get('population', 0))
+        except (ValueError, TypeError):
+            pop = 0
+
+        # Assign base radius (miles) based on place type + rough population.
+        # A separate urban_scale multiplier (sent from the UI) lets the user
+        # tighten or widen these at query time.
+        # Small towns (pop < 10k) are skipped entirely — they're rural communities,
+        # not urban areas (e.g. Boulder Creek ~4k, Felton ~4k).
+        if place == 'city':
+            if pop > 500_000:
+                radius = 6.0
+            elif pop > 100_000:
+                radius = 4.0
+            elif pop > 50_000:
+                radius = 2.5
+            else:
+                radius = 1.5
+        else:  # town
+            if pop > 0 and pop < 15_000:
+                continue   # too small to be considered urban
+            radius = 1.2 if pop > 20_000 else 0.8
+
+        places.append({
+            'lat': el['lat'],
+            'lon': el['lon'],
+            'name': tags.get('name', ''),
+            'radius_miles': radius,
+        })
+
+    print(f"[urban] Overpass: {len(places)} place nodes")
+    return places
+
+
 def fetch_elevation(cells, _opts):
     """Batch-fetch elevations from OpenTopoData (max 100 pts/call)."""
     if not cells:
@@ -1171,6 +1243,7 @@ _CACHE_TTL = {
     'trees':     48 * 3600,   # 48 h — species distribution is stable
     'soil':      72 * 3600,   # 72 h — soil properties essentially static
     'elevation': 72 * 3600,   # 72 h — elevation never changes
+    'urban':     72 * 3600,   # 72 h — city limits rarely change
 }
 # Invalidate if viewport center moves more than this many miles from cached center
 CACHE_RADIUS_MILES = 75
@@ -1193,13 +1266,15 @@ _RESULTS_TTL       = 6 * 3600   # match most volatile layer (precip = 6 h)
 _results_cache: dict = {}
 _results_lock        = threading.Lock()
 
-def _payload_hash(bounds, resolution, layers, weights, lookahead_weeks) -> str:
+def _payload_hash(bounds, resolution, layers, weights, lookahead_weeks, skip_urban, urban_scale) -> str:
     payload = {
         'bounds':          bounds,
         'resolution':      resolution,
         'layers':          layers,
         'weights':         weights,
         'lookahead_weeks': lookahead_weeks,
+        'skip_urban':      skip_urban,
+        'urban_scale':     urban_scale,
     }
     return hashlib.md5(json.dumps(payload, sort_keys=True).encode()).hexdigest()
 
@@ -1377,12 +1452,12 @@ def calculate():
     layers         = body.get('layers', {})
     weights        = body.get('weights', {})
     lookahead_weeks = max(0, int(body.get('lookahead_weeks', 0)))
+    skip_urban     = bool(body.get('skip_urban', True))
+    urban_scale    = max(0.1, min(4.0, float(body.get('urban_scale', 1.4))))
     target_date    = datetime.date.today() + datetime.timedelta(weeks=lookahead_weeks)
 
     # ── Results cache: exact-match shortcut ───────────────────────────────────
-    # If bounds, resolution, every layer option, weights, and lookahead are all
-    # identical to a recent run, skip fetching and scoring entirely.
-    phash = _payload_hash(bounds, resolution, layers, weights, lookahead_weeks)
+    phash = _payload_hash(bounds, resolution, layers, weights, lookahead_weeks, skip_urban, urban_scale)
     cached_result = results_cache_get(phash, bounds)
     if cached_result is not None:
         return jsonify(cached_result)
@@ -1390,6 +1465,35 @@ def calculate():
     grid = create_grid(bounds, resolution)
     if not grid:
         return jsonify({'type': 'FeatureCollection', 'features': [], 'meta': {}})
+
+    # ── Urban filter ──────────────────────────────────────────────────────────
+    # Query NLCD 2019 (Esri Living Atlas ImageServer) for every grid cell centre.
+    # Grid cells within urban place radii (OSM Overpass) are dropped before
+    # scoring.  Place nodes are cached per-bounds for 72 h.
+    urban_filtered = 0
+    if skip_urban and grid:
+        # Fetch place nodes once per bbox (cached 72 h).
+        # None = network failure → skip filtering so we don't drop all cells.
+        cached_places = cache_get('urban', bounds, {'resolution': 0})
+        if cached_places is not None:
+            place_nodes = cached_places
+        else:
+            place_nodes = fetch_urban_place_nodes(bounds)
+            if place_nodes is not None:
+                cache_set('urban', bounds, {'resolution': 0}, place_nodes)
+
+        if place_nodes:
+            before = len(grid)
+            def _cell_is_urban(cell):
+                clat, clon = cell['center']
+                for p in place_nodes:
+                    if haversine_miles(clat, clon, p['lat'], p['lon']) <= p['radius_miles'] * urban_scale:
+                        return True
+                        return True
+                return False
+            grid = [c for c in grid if not _cell_is_urban(c)]
+            urban_filtered = before - len(grid)
+            print(f"[urban] OSM: removed {urban_filtered} urban cells ({len(grid)} remain)")
 
     # ── Per-layer data cache + fetch ──────────────────────────────────────────
     # Each layer is keyed by (layer_name, hash(layer_opts)).  Only layers whose
@@ -1451,7 +1555,9 @@ def calculate():
     result = {
         'type':     'FeatureCollection',
         'features': features,
-        'meta':     {'cells': len(features), 'resolution_miles': resolution, 'target_date': target_date.isoformat()},
+        'meta':     {'cells': len(features), 'resolution_miles': resolution,
+                     'target_date': target_date.isoformat(),
+                     'urban_filtered': urban_filtered},
     }
     results_cache_set(phash, bounds, result)
     return jsonify(result)

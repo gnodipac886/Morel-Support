@@ -471,6 +471,13 @@
         </div>
         <div id="target-date-label" style="font-size:11px;color:var(--text-dim);margin-top:5px"></div>
       </div>
+
+      <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--text-muted)">
+          <input type="checkbox" id="skip-urban" checked style="accent-color:var(--accent);width:14px;height:14px;cursor:pointer">
+          <span>Skip urban areas <span style="color:var(--text-dim);font-size:11px">(city limits)</span></span>
+        </label>
+      </div>
     </div>
 
     <!-- Custom Weights -->
@@ -691,6 +698,7 @@ async function calculate() {
     bounds: { north: bounds.getNorth(), south: bounds.getSouth(), east: bounds.getEast(), west: bounds.getWest() },
     resolution: +document.getElementById('res-slider').value,
     lookahead_weeks: Math.max(0, parseInt(document.getElementById('lookahead-weeks').value, 10) || 0),
+    skip_urban: document.getElementById('skip-urban').checked,
     layers: buildLayers(),
     weights: buildWeights(),
   };
@@ -738,7 +746,8 @@ function renderGrid(geojson) {
   const dateStr = meta.target_date
     ? new Date(meta.target_date + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
     : 'today';
-  sb.textContent = `${features.length} cells shown (≥30%) · ${all.length} total · ${meta.resolution_miles || '?'} mi · ${dateStr}`;
+  const urbanNote = meta.urban_filtered ? ` · ${meta.urban_filtered} urban cells skipped` : '';
+  sb.textContent = `${features.length} cells shown (≥30%) · ${all.length} total · ${meta.resolution_miles || '?'} mi · ${dateStr}${urbanNote}`;
 
   // Refresh legend swatches with live ramp colors
   showProbLegend();
