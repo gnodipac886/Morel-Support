@@ -171,11 +171,12 @@
   #res-slider { flex: 1; accent-color: #3a9e4a; cursor: pointer; }
   #res-value { font-size: 13px; font-weight: 700; color: #3a9e4a; min-width: 50px; text-align: right; }
   #cell-estimate { font-size: 11px; color: var(--text-dim); margin-top: 5px; }
-  .weight-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
-  .weight-label { font-size: 11px; color: var(--text-muted); width: 80px; }
-  .weight-slider { flex: 1; accent-color: var(--accent); cursor: pointer; }
-  .weight-val { font-size: 11px; color: var(--text-sub); width: 30px; text-align: right; }
-  #weights-note { font-size: 10px; color: var(--text-dim); margin-top: 6px; }
+  #pie-svg { display: block; width: 180px; height: 180px; margin: 0 auto 10px; overflow: visible; }
+  #pie-legend { display: flex; flex-direction: column; gap: 4px; }
+  .pie-legend-row { display: flex; align-items: center; gap: 7px; }
+  .pie-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .pie-lname { font-size: 11px; color: var(--text-muted); flex: 1; }
+  .pie-lpct { font-size: 11px; color: var(--text-sub); width: 32px; text-align: right; font-variant-numeric: tabular-nums; }
 
   /* ── Calculate button ─────────────────────────────────────────────── */
   #sidebar-footer {
@@ -482,8 +483,8 @@
     <!-- Custom Weights -->
     <div id="weights-card">
       <h3>Layer Weights <button onclick="allLayers()" style="float:right;font-size:10px;padding:2px 7px;background:var(--accent);color:#fff;border:none;border-radius:3px;cursor:pointer;text-transform:uppercase;letter-spacing:0.4px;font-weight:700;">activate all</button></h3>
-      <div id="weight-rows"></div>
-      <div id="weights-note">Weights renormalize to enabled layers only.</div>
+      <svg id="pie-svg" viewBox="0 0 200 200"></svg>
+      <div id="pie-legend"></div>
     </div>
 
   </div><!-- /sidebar-body -->
@@ -598,7 +599,7 @@ function updateCellEstimate() {
 }
 map.on('moveend zoomend', updateCellEstimate);
 
-// ── Weight sliders ────────────────────────────────────────────────────
+// ── Pie weight chart ──────────────────────────────────────────────────
 const LAYER_DEFS = [
   { id: 'inat',      label: 'iNat Sightings', def: 30 },
   { id: 'precip',    label: 'Precipitation',  def: 25 },
@@ -608,41 +609,100 @@ const LAYER_DEFS = [
   { id: 'soil',      label: 'Soil',           def:  4 },
   { id: 'elevation', label: 'Elevation',      def:  2 },
 ];
-function buildWeightRows() {
-  const c = document.getElementById('weight-rows');
-  c.innerHTML = '';
-  LAYER_DEFS.forEach(({ id, label, def }) => {
-    const row = document.createElement('div');
-    row.className = 'weight-row';
-    row.innerHTML = `<span class="weight-label">${label}</span>
-      <input type="range" class="weight-slider" id="w-${id}" min="0" max="100" value="${def}" oninput="onWeightChange('${id}')">
-      <span class="weight-val" id="wv-${id}">${def}%</span>`;
-    c.appendChild(row);
+const PIE_COLORS = ['#4ade80','#60a5fa','#f97316','#2dd4bf','#fbbf24','#a78bfa','#94a3b8'];
+const PIE_R_OUT = 76, PIE_R_IN = 36, PIE_CX = 100, PIE_CY = 100, PIE_MIN_PCT = 1;
+let pieWeights = LAYER_DEFS.map(d => d.def);
+
+function pieAngle(i) {
+  let sum = 0;
+  for (let j = 0; j < i; j++) sum += pieWeights[j];
+  return sum * 360 / 100;
+}
+function polarXY(angleDeg, r) {
+  const rad = (angleDeg - 90) * Math.PI / 180;
+  return [PIE_CX + r * Math.cos(rad), PIE_CY + r * Math.sin(rad)];
+}
+
+function renderPie() {
+  const svg = document.getElementById('pie-svg');
+  const legend = document.getElementById('pie-legend');
+  const n = LAYER_DEFS.length;
+  let html = '';
+
+  for (let i = 0; i < n; i++) {
+    const a1 = pieAngle(i), a2 = pieAngle(i + 1);
+    const [ox1, oy1] = polarXY(a1, PIE_R_OUT), [ox2, oy2] = polarXY(a2, PIE_R_OUT);
+    const [ix1, iy1] = polarXY(a1, PIE_R_IN),  [ix2, iy2] = polarXY(a2, PIE_R_IN);
+    const lg = (a2 - a1) > 180 ? 1 : 0;
+    html += `<path d="M${ox1.toFixed(2)} ${oy1.toFixed(2)} A${PIE_R_OUT} ${PIE_R_OUT} 0 ${lg} 1 ${ox2.toFixed(2)} ${oy2.toFixed(2)} L${ix2.toFixed(2)} ${iy2.toFixed(2)} A${PIE_R_IN} ${PIE_R_IN} 0 ${lg} 0 ${ix1.toFixed(2)} ${iy1.toFixed(2)} Z" fill="${PIE_COLORS[i]}" stroke="var(--sidebar-bg)" stroke-width="2"/>`;
+  }
+  // Draggable divider handles (skip divider 0 — it's the fixed top anchor)
+  for (let i = 1; i < n; i++) {
+    const [hx, hy] = polarXY(pieAngle(i), PIE_R_OUT);
+    html += `<circle cx="${hx.toFixed(2)}" cy="${hy.toFixed(2)}" r="7" fill="var(--card-bg)" stroke="var(--border)" stroke-width="1.5" class="pie-handle" data-div="${i}" style="cursor:grab"/>`;
+  }
+  html += `<text x="${PIE_CX}" y="${PIE_CY - 4}" text-anchor="middle" font-size="10" fill="var(--text-muted)" style="user-select:none;pointer-events:none">Layer</text>`;
+  html += `<text x="${PIE_CX}" y="${PIE_CY + 9}" text-anchor="middle" font-size="10" fill="var(--text-muted)" style="user-select:none;pointer-events:none">Weights</text>`;
+  svg.innerHTML = html;
+
+  svg.querySelectorAll('.pie-handle').forEach(el =>
+    el.addEventListener('mousedown', onPieHandleDown));
+
+  legend.innerHTML = LAYER_DEFS.map((d, i) =>
+    `<div class="pie-legend-row">
+      <span class="pie-dot" style="background:${PIE_COLORS[i]}"></span>
+      <span class="pie-lname">${d.label}</span>
+      <span class="pie-lpct">${Math.round(pieWeights[i])}%</span>
+    </div>`).join('');
+
+  LAYER_DEFS.forEach((d, i) => {
+    const b = document.getElementById('badge-' + d.id);
+    if (b) b.textContent = Math.round(pieWeights[i]) + '%';
   });
 }
-function onWeightChange(id) {
-  const v = +document.getElementById('w-' + id).value;
-  document.getElementById('wv-' + id).textContent = v + '%';
-  document.getElementById('badge-' + id).textContent = v + '%';
+
+let pieDrag = null;
+function onPieHandleDown(e) {
+  e.preventDefault();
+  const di = +e.currentTarget.dataset.div;
+  let fixedLow = 0;
+  for (let j = 0; j < di - 1; j++) fixedLow += pieWeights[j];
+  let fixedHigh = fixedLow + pieWeights[di - 1] + pieWeights[di];
+  pieDrag = { di, fixedLow: fixedLow * 360/100, fixedHigh: fixedHigh * 360/100 };
+  document.addEventListener('mousemove', onPieDragMove);
+  document.addEventListener('mouseup',   onPieDragEnd);
+}
+function onPieDragMove(e) {
+  if (!pieDrag) return;
+  const rect = document.getElementById('pie-svg').getBoundingClientRect();
+  const mx = (e.clientX - rect.left) * 200 / rect.width;
+  const my = (e.clientY - rect.top)  * 200 / rect.height;
+  let deg = Math.atan2(my - PIE_CY, mx - PIE_CX) * 180/Math.PI + 90;
+  if (deg < 0) deg += 360;
+  const { di, fixedLow, fixedHigh } = pieDrag;
+  const minA = PIE_MIN_PCT * 360/100;
+  const clamped = Math.max(fixedLow + minA, Math.min(fixedHigh - minA, deg));
+  pieWeights[di - 1] = (clamped   - fixedLow)  * 100/360;
+  pieWeights[di]     = (fixedHigh - clamped)    * 100/360;
+  renderPie();
+}
+function onPieDragEnd() {
+  pieDrag = null;
+  document.removeEventListener('mousemove', onPieDragMove);
+  document.removeEventListener('mouseup',   onPieDragEnd);
 }
 const ALL_LAYER_IDS = ['inat', 'precip', 'fires', 'trees', 'season', 'elevation', 'soil'];
 
 function soloLayer(id) {
-  ALL_LAYER_IDS.forEach(lid => {
-    document.getElementById('en-' + lid).checked = (lid === id);
-  });
+  ALL_LAYER_IDS.forEach(lid => { document.getElementById('en-' + lid).checked = (lid === id); });
   onLayerToggle();
 }
-
 function allLayers() {
-  ALL_LAYER_IDS.forEach(lid => {
-    document.getElementById('en-' + lid).checked = true;
-  });
+  ALL_LAYER_IDS.forEach(lid => { document.getElementById('en-' + lid).checked = true; });
   onLayerToggle();
 }
-
 function onLayerToggle() { updateCellEstimate(); }
-buildWeightRows();
+renderPie();
 
 // ── Color ramp: blue → cyan → green → yellow → orange → red ──────────
 const RAMP = [
@@ -687,7 +747,7 @@ function buildLayers() {
 }
 function buildWeights() {
   const w = {};
-  LAYER_DEFS.forEach(({ id }) => { w[id] = +document.getElementById('w-' + id).value / 100; });
+  LAYER_DEFS.forEach(({ id }, i) => { w[id] = pieWeights[i] / 100; });
   return w;
 }
 
