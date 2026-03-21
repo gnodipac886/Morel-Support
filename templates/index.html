@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🍄 Morel Support</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  /* ── Theme variables ─────────────────────────────────────────────── */
+  :root {
+    --bg:          #111111;
+    --sidebar-bg:  #1a1a1a;
+    --header-bg:   #111111;
+    --card-bg:     #242424;
+    --card-hover:  #2c2c2c;
+    --subcard-bg:  #1e1e1e;
+    --border:      #333333;
+    --text:        #e0e0e0;
+    --text-sub:    #bbbbbb;
+    --text-muted:  #888888;
+    --text-dim:    #666666;
+    --input-bg:    #333333;
+    --input-bdr:   #444444;
+    --badge-bg:    #3a3a3a;
+    --panel-bg:    rgba(26,26,26,0.96);
+    --legend-bg:   rgba(26,26,26,0.93);
+    --stats-bg:    rgba(26,26,26,0.90);
+    --toggle-off:  #444444;
+    --btn-dis-bg:  #333333;
+    --btn-dis-fg:  #666666;
+    --spinner-trk: #333333;
+    --scroll-trk:  transparent;
+    --scroll-thm:  #444444;
+    --overlay-bg:  rgba(0,0,0,0.50);
+    --accent:      #4a90d9;
+    --mode-btn-bg: #1a1a1a;
+    --mode-btn-bdr:#444444;
+    --mode-btn-fg: #cccccc;
+    --mode-btn-hov:#2c2c2c;
+  }
+  .light {
+    --bg:          #efefef;
+    --sidebar-bg:  #ffffff;
+    --header-bg:   #f5f5f5;
+    --card-bg:     #f9f9f9;
+    --card-hover:  #f0f0f0;
+    --subcard-bg:  #f4f4f4;
+    --border:      #dddddd;
+    --text:        #1a1a1a;
+    --text-sub:    #444444;
+    --text-muted:  #666666;
+    --text-dim:    #999999;
+    --input-bg:    #ffffff;
+    --input-bdr:   #cccccc;
+    --badge-bg:    #e4e4e4;
+    --panel-bg:    rgba(255,255,255,0.97);
+    --legend-bg:   rgba(255,255,255,0.95);
+    --stats-bg:    rgba(255,255,255,0.93);
+    --toggle-off:  #bbbbbb;
+    --btn-dis-bg:  #dddddd;
+    --btn-dis-fg:  #aaaaaa;
+    --spinner-trk: #cccccc;
+    --scroll-trk:  transparent;
+    --scroll-thm:  #cccccc;
+    --overlay-bg:  rgba(255,255,255,0.55);
+    --accent:      #2264b8;
+    --mode-btn-bg: #ffffff;
+    --mode-btn-bdr:#cccccc;
+    --mode-btn-fg: #444444;
+    --mode-btn-hov:#eeeeee;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg); color: var(--text);
+    height: 100vh; display: flex; overflow: hidden;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  /* ── Sidebar ─────────────────────────────────────────────────────── */
+  #sidebar {
+    width: 320px; min-width: 320px; height: 100vh;
+    background: var(--sidebar-bg); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow: hidden;
+    transition: width 0.2s ease, min-width 0.2s ease, background 0.2s, border-color 0.2s;
+    z-index: 1000;
+  }
+  #sidebar.collapsed { width: 0; min-width: 0; border-right: none; }
+
+  #sidebar-header {
+    padding: 12px 14px 10px;
+    background: var(--header-bg); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  #sidebar-header h1 { font-size: 16px; font-weight: 700; color: var(--text); white-space: nowrap; flex: 1; }
+  #sidebar-header .subtitle { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
+
+  /* mode toggle in header */
+  #mode-toggle-btn {
+    background: var(--mode-btn-bg); border: 1px solid var(--mode-btn-bdr);
+    color: var(--mode-btn-fg); border-radius: 6px; width: 30px; height: 30px;
+    font-size: 15px; cursor: pointer; display: flex; align-items: center;
+    justify-content: center; flex-shrink: 0; transition: background 0.15s;
+  }
+  #mode-toggle-btn:hover { background: var(--mode-btn-hov); }
+
+  #sidebar-body { overflow-y: auto; flex: 1; padding: 10px 12px; display: flex; flex-direction: column; gap: 9px; }
+
+  /* ── Cards ───────────────────────────────────────────────────────── */
+  .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; transition: background 0.2s, border-color 0.2s; }
+  .card-header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; cursor: pointer; user-select: none; }
+  .card-header:hover { background: var(--card-hover); }
+  .card-icon { font-size: 15px; width: 20px; text-align: center; }
+  .card-title { flex: 1; font-size: 13px; font-weight: 600; color: var(--text); }
+  .card-badge { font-size: 10px; background: var(--badge-bg); color: var(--text-muted); padding: 2px 7px; border-radius: 20px; }
+  .card-chevron { font-size: 10px; color: var(--text-dim); transition: transform 0.2s; }
+  .card.open .card-chevron { transform: rotate(90deg); }
+  .card-body { padding: 0 12px 12px; display: none; }
+  .card.open .card-body { display: block; }
+
+  /* ── Toggle switch ───────────────────────────────────────────────── */
+  .layer-toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 0 6px; border-bottom: 1px solid var(--border); margin-bottom: 8px;
+  }
+  .layer-toggle-label { font-size: 12px; color: var(--text-sub); }
+  .solo-btn {
+    font-size: 10px; padding: 2px 7px; border-radius: 10px; cursor: pointer;
+    border: 1px solid var(--border); background: transparent; color: var(--text-sub);
+    margin-right: 8px; transition: background 0.15s, color 0.15s;
+  }
+  .solo-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .toggle { position: relative; width: 36px; height: 20px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle .slider {
+    position: absolute; inset: 0; background: var(--toggle-off); border-radius: 20px;
+    transition: background 0.2s; cursor: pointer;
+  }
+  .toggle .slider:before {
+    content: ''; position: absolute; width: 14px; height: 14px;
+    left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: transform 0.2s;
+  }
+  .toggle input:checked + .slider { background: #3a9e4a; }
+  .toggle input:checked + .slider:before { transform: translateX(16px); }
+
+  /* ── Sub-layer checkboxes ─────────────────────────────────────────── */
+  .sublayer-label { display: flex; align-items: center; gap: 7px; cursor: pointer; font-size: 12px; color: var(--text-sub); padding: 3px 0; }
+  .sublayer-label input[type=checkbox] { accent-color: #3a9e4a; }
+
+  /* ── Option rows ─────────────────────────────────────────────────── */
+  .opt-row { display: flex; align-items: center; justify-content: space-between; margin: 5px 0; font-size: 12px; color: var(--text-sub); }
+  .opt-row label { color: var(--text-muted); font-size: 11px; }
+  .opt-input { background: var(--input-bg); border: 1px solid var(--input-bdr); color: var(--text); border-radius: 5px; padding: 3px 7px; font-size: 12px; width: 80px; text-align: right; }
+  .opt-select { background: var(--input-bg); border: 1px solid var(--input-bdr); color: var(--text); border-radius: 5px; padding: 3px 6px; font-size: 12px; }
+  .hint { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+
+  /* ── Resolution + Weights cards ──────────────────────────────────── */
+  #resolution-card, #weights-card {
+    background: var(--subcard-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 14px;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  #resolution-card h3, #weights-card h3 { font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.6px; }
+  .res-row { display: flex; align-items: center; gap: 10px; }
+  #res-slider { flex: 1; accent-color: #3a9e4a; cursor: pointer; }
+  #res-value { font-size: 13px; font-weight: 700; color: #3a9e4a; min-width: 50px; text-align: right; }
+  #cell-estimate { font-size: 11px; color: var(--text-dim); margin-top: 5px; }
+  .weight-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+  .weight-label { font-size: 11px; color: var(--text-muted); width: 80px; }
+  .weight-slider { flex: 1; accent-color: var(--accent); cursor: pointer; }
+  .weight-val { font-size: 11px; color: var(--text-sub); width: 30px; text-align: right; }
+  #weights-note { font-size: 10px; color: var(--text-dim); margin-top: 6px; }
+
+  /* ── Calculate button ─────────────────────────────────────────────── */
+  #calc-btn {
+    background: linear-gradient(135deg, #2a7a38, #3a9e4a);
+    color: #fff; border: none; border-radius: 8px; padding: 13px;
+    font-size: 14px; font-weight: 700; cursor: pointer; width: 100%;
+    letter-spacing: 0.3px; transition: opacity 0.15s;
+  }
+  #calc-btn:hover { opacity: 0.88; }
+  #calc-btn:disabled { background: var(--btn-dis-bg); color: var(--btn-dis-fg); cursor: not-allowed; opacity: 1; }
+
+  /* ── Map ─────────────────────────────────────────────────────────── */
+  #map-wrap { flex: 1; position: relative; }
+  #map { width: 100%; height: 100%; }
+
+  /* ── Map overlay buttons ──────────────────────────────────────────── */
+  .map-btn {
+    position: absolute; z-index: 1500;
+    background: var(--mode-btn-bg); border: 1px solid var(--mode-btn-bdr);
+    color: var(--mode-btn-fg); border-radius: 6px;
+    width: 34px; height: 34px; font-size: 16px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .map-btn:hover { background: var(--mode-btn-hov); }
+  #toggle-sidebar { top: 12px; left: 12px; }
+
+  /* ── Loading overlay ─────────────────────────────────────────────── */
+  #loading {
+    display: none; position: absolute; inset: 0; background: var(--overlay-bg);
+    z-index: 2000; align-items: center; justify-content: center; flex-direction: column; gap: 14px;
+  }
+  #loading.visible { display: flex; }
+  .spinner {
+    width: 44px; height: 44px; border: 4px solid var(--spinner-trk);
+    border-top-color: #3a9e4a; border-radius: 50%; animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #loading-text { color: var(--text); font-size: 14px; font-weight: 500; }
+
+  /* ── Legend ──────────────────────────────────────────────────────── */
+  #legend {
+    position: absolute; bottom: 28px; right: 14px; z-index: 1000;
+    background: var(--legend-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 14px; min-width: 150px; transition: background 0.2s, border-color 0.2s;
+  }
+  #legend h4 { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .legend-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; font-size: 12px; color: var(--text-sub); }
+  .legend-swatch { width: 16px; height: 16px; border-radius: 3px; flex-shrink: 0; }
+
+  /* ── Info panel ──────────────────────────────────────────────────── */
+  #info-panel {
+    position: absolute; top: 14px; right: 14px; z-index: 1200;
+    background: var(--panel-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 14px; min-width: 210px; max-width: 270px; display: none;
+    font-size: 12px; transition: background 0.2s, border-color 0.2s;
+  }
+  #info-panel h4 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+  .info-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid var(--border); color: var(--text-sub); }
+  .info-row:last-child { border-bottom: none; }
+  .info-key { color: var(--text-muted); }
+  .score-bar-wrap { display: flex; align-items: center; gap: 6px; margin: 5px 0; }
+  .score-bar-label { width: 90px; font-size: 11px; color: var(--text-muted); }
+  .score-bar-track { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .score-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+
+  /* ── Stats bar ───────────────────────────────────────────────────── */
+  #stats-bar {
+    position: absolute; bottom: 14px; left: 14px; z-index: 1000;
+    background: var(--stats-bg); border: 1px solid var(--border); border-radius: 6px;
+    padding: 6px 12px; font-size: 11px; color: var(--text-muted); display: none;
+    transition: background 0.2s, border-color 0.2s;
+  }
+
+  /* ── Scrollbar ───────────────────────────────────────────────────── */
+  #sidebar-body::-webkit-scrollbar { width: 4px; }
+  #sidebar-body::-webkit-scrollbar-track { background: var(--scroll-trk); }
+  #sidebar-body::-webkit-scrollbar-thumb { background: var(--scroll-thm); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- ── Sidebar ──────────────────────────────────────────────────────── -->
+<div id="sidebar">
+  <div id="sidebar-header">
+    <span style="font-size:20px">🍄</span>
+    <div style="flex:1">
+      <h1>Morel Support</h1>
+      <div class="subtitle">Foraging probability map</div>
+    </div>
+    <button id="mode-toggle-btn" onclick="toggleMode()" title="Toggle light/dark mode">🌙</button>
+  </div>
+
+  <div id="sidebar-body">
+
+    <!-- iNaturalist -->
+    <div class="card open" id="card-inat">
+      <div class="card-header" onclick="toggleCard('inat')">
+        <span class="card-icon">🔭</span>
+        <span class="card-title">iNaturalist Sightings</span>
+        <span class="card-badge" id="badge-inat">30%</span>
+        <span class="card-chevron">▶</span>
+      </div>
+      <div class="card-body">
+        <div class="layer-toggle-row">
+          <span class="layer-toggle-label">Enable layer</span>
+          <button class="solo-btn" onclick="soloLayer('inat')">solo</button>
+          <label class="toggle"><input type="checkbox" id="en-inat" checked onchange="onLayerToggle()"><span class="slider"></span></label>
+        </div>
+        <div class="opt-row">
+          <label>Years back</label>
+          <input type="number" class="opt-input" id="inat-years" value="5" min="1" max="20">
+        </div>
+        <div class="opt-row">
+          <label>Quality grade</label>
+          <select class="opt-select" id="inat-quality">
+            <option value="research,needs_id">Research + Needs ID</option>
+            <option value="research">Research only</option>
+            <option value="needs_id">Needs ID only</option>
+            <option value="casual">All grades</option>
+          </select>
+        </div>
+        <label class="sublayer-label" style="margin-top:4px">
+          <input type="checkbox" id="inat-seasonal" checked> Weight by day-of-year match
+        </label>
+      </div>
+    </div>
+
+    <!-- Precipitation -->
+    <div class="card open" id="card-precip">
+      <div class="card-header" onclick="toggleCard('precip')">
+        <span class="card-icon">🌧️</span>
+        <span class="card-title">Precipitation & Soil Temp</span>
+        <span class="card-badge" id="badge-precip">25%</span>
+        <span class="card-chevron">▶</span>
+      </div>
+      <div class="card-body">
+        <div class="layer-toggle-row">
+          <span class="layer-toggle-label">Enable layer</span>
+          <button class="solo-btn" onclick="soloLayer('precip')">solo</button>
+          <label class="toggle"><input type="checkbox" id="en-precip" checked onchange="onLayerToggle()"><span class="slider"></span></label>
+        </div>
+        <div class="opt-row">
+          <label>Time window</label>
+          <select class="opt-select" id="precip-window">
+            <option value="1w">1 week</option>
+            <option value="2w" selected>2 weeks</option>
+            <option value="3w">3 weeks</option>
+            <option value="1m">1 month</option>
+            <option value="2m">2 months</option>
+            <option value="3m">3 months</option>
+          </select>
+        </div>
+        <p class="hint">Precipitation (rain + snow) per cell. Sources: Open-Meteo archive, NASA Daymet, NOAA ACIS/PRISM.</p>
+      </div>
+    </div>
+
+    <!-- Fire History -->
+    <div class="card open" id="card-fires">
+      <div class="card-header" onclick="toggleCard('fires')">
+        <span class="card-icon">🔥</span>
+        <span class="card-title">Fire History</span>
+        <span class="card-badge" id="badge-fires">20%</span>
+        <span class="card-chevron">▶</span>
+      </div>
+      <div class="card-body">
+        <div class="layer-toggle-row">
+          <span class="layer-toggle-label">Enable layer</span>
+          <button class="solo-btn" onclick="soloLayer('fires')">solo</button>
+          <label class="toggle"><input type="checkbox" id="en-fires" checked onchange="onLayerToggle()"><span class="slider"></span></label>
+        </div>
+        <div class="opt-row">
+          <label>Years back</label>
+          <input type="number" class="opt-input" id="fires-years" value="5" min="1" max="15">
+        </div>
+        <label class="sublayer-label" style="margin-top:4px">
+          <input type="checkbox" id="fires-ignore-current">
+          Ignore current year fires
+        </label>
+        <p class="hint">Post-fire morel fruiting peaks 1 year after burn. Sources: NIFC WFIGS, USFS EDW, CAL FIRE/FRAP (CA only), NASA FIRMS (set FIRMS_MAP_KEY env var).</p>
+      </div>
+    </div>
+
+    <!-- Host Trees -->
+    <div class="card open" id="card-trees">
+      <div class="card-header" onclick="toggleCard('trees')">
+        <span class="card-icon">🌳</span>
+        <span class="card-title">Host Trees</span>
+        <span class="card-badge" id="badge-trees">12%</span>
+        <span class="card-chevron">▶</span>
+      </div>
+      <div class="card-body">
+        <div class="layer-toggle-row">
+          <span class="layer-toggle-label">Enable layer</span>
+          <button class="solo-btn" onclick="soloLayer('trees')">solo</button>
+          <label class="toggle"><input type="checkbox" id="en-trees" checked onchange="onLayerToggle()"><span class="slider"></span></label>
+        </div>
+        <p class="hint" style="margin-bottom:6px">Species (GBIF · LANDFIRE · USFS · NLCD)</p>
+        <p class="hint" style="margin:4px 0 3px;color:#ef4444;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">🔥 Burn-zone conifers</p>
+        <label class="sublayer-label"><input type="checkbox" class="tree-sp" value="douglas_fir" checked> Douglas-fir</label>
+        <label class="sublayer-label"><input type="checkbox" class="tree-sp" value="pine" checked> Pines</label>
+        <label class="sublayer-label"><input type="checkbox" class="tree-sp" value="white_fir" checked> White Fir</label>
+        <p class="hint" style="margin:6px 0 3px;color:#4ade80;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">🌳 Hardwood species</p>
+        <label class="sublayer-label"><input type="checkbox" class="tree-sp" value="oak" checked> Oak</label>
+        <label class="sublayer-label"><input type="checkbox" class="tree-sp" value="cottonwood" checked> Cottonwood</label>
+        <label class="sublayer-label"><input type="checkbox" class="tree-sp" value="sycamore" checked> Sycamore</label>
+        <label class="sublayer-label"><input type="checkbox" class="tree-sp" value="ash" checked> Ash</label>
+        <label class="sublayer-label"><input type="checkbox" class="tree-sp" value="elm"> Elm</label>
+        <label class="sublayer-label"><input type="checkbox" class="tree-sp" value="tulip_poplar"> Tulip Poplar</label>
+        <label class="sublayer-label"><input type="checkbox" class="tree-sp" value="walnut"> Walnut</label>
+        <label class="sublayer-label"><input type="checkbox" class="tree-sp" value="hickory"> Hickory</label>
+        <label class="sublayer-label"><input type="checkbox" class="tree-sp" value="maple"> Maple</label>
+      </div>
+    </div>
+
+    <!-- Seasonality -->
+    <div class="card" id="card-season">
+      <div class="card-header" onclick="toggleCard('season')">
+        <span class="card-icon">📅</span>
+        <span class="card-title">Seasonality</span>
+        <span class="card-badge" id="badge-season">7%</span>
+        <span class="card-chevron">▶</span>
+      </div>
+      <div class="card-body">
+        <div class="layer-toggle-row">
+          <span class="layer-toggle-label">Enable layer</span>
+          <button class="solo-btn" onclick="soloLayer('season')">solo</button>
+          <label class="toggle"><input type="checkbox" id="en-season" checked onchange="onLayerToggle()"><span class="slider"></span></label>
+        </div>
+        <p class="hint">Estimates seasonal window based on current date and latitude. Peak shifts ~2.5 days/° N.</p>
+      </div>
+    </div>
+
+    <!-- Soil -->
+    <div class="card" id="card-soil">
+      <div class="card-header" onclick="toggleCard('soil')">
+        <span class="card-icon">🪨</span>
+        <span class="card-title">Soil (pH + Texture)</span>
+        <span class="card-badge" id="badge-soil">4%</span>
+        <span class="card-chevron">▶</span>
+      </div>
+      <div class="card-body">
+        <div class="layer-toggle-row">
+          <span class="layer-toggle-label">Enable layer</span>
+          <button class="solo-btn" onclick="soloLayer('soil')">solo</button>
+          <label class="toggle"><input type="checkbox" id="en-soil" onchange="onLayerToggle()"><span class="slider"></span></label>
+        </div>
+        <p class="hint">Optimal: pH 6–7.5, loamy texture. Source: SoilGrids ISRIC (slower API).</p>
+      </div>
+    </div>
+
+    <!-- Elevation -->
+    <div class="card" id="card-elevation">
+      <div class="card-header" onclick="toggleCard('elevation')">
+        <span class="card-icon">⛰️</span>
+        <span class="card-title">Elevation</span>
+        <span class="card-badge" id="badge-elevation">2%</span>
+        <span class="card-chevron">▶</span>
+      </div>
+      <div class="card-body">
+        <div class="layer-toggle-row">
+          <span class="layer-toggle-label">Enable layer</span>
+          <button class="solo-btn" onclick="soloLayer('elevation')">solo</button>
+          <label class="toggle"><input type="checkbox" id="en-elevation" onchange="onLayerToggle()"><span class="slider"></span></label>
+        </div>
+        <p class="hint">Optimal: 300–3000 ft. Source: OpenTopoData NED 10m (limited to 100 cells).</p>
+      </div>
+    </div>
+
+    <!-- Resolution + Lookahead -->
+    <div id="resolution-card">
+      <h3>Grid Resolution</h3>
+      <div class="res-row">
+        <input type="range" id="res-slider" min="1" max="20" value="5" step="1" oninput="updateRes()">
+        <span id="res-value">5 mi</span>
+      </div>
+      <div id="cell-estimate">~— cells in viewport</div>
+
+      <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px">
+        <h3 style="margin-bottom:8px">Date Look Ahead</h3>
+        <div class="res-row">
+          <input type="number" id="lookahead-weeks" class="opt-input" value="0" min="0" max="52"
+            style="width:70px;text-align:center" oninput="updateLookahead()">
+          <span style="font-size:12px;color:var(--text-muted)">weeks from today</span>
+        </div>
+        <div id="target-date-label" style="font-size:11px;color:var(--text-dim);margin-top:5px"></div>
+      </div>
+    </div>
+
+    <!-- Custom Weights -->
+    <div id="weights-card">
+      <h3>Layer Weights</h3>
+      <div id="weight-rows"></div>
+      <div id="weights-note">Weights renormalize to enabled layers only.</div>
+    </div>
+
+    <!-- Calculate -->
+    <button id="calc-btn" onclick="calculate()">Calculate Probability</button>
+    <div style="height:8px"></div>
+
+  </div><!-- /sidebar-body -->
+</div><!-- /sidebar -->
+
+<!-- ── Map area ───────────────────────────────────────────────────────── -->
+<div id="map-wrap">
+  <button id="toggle-sidebar" class="map-btn" onclick="toggleSidebar()" title="Toggle sidebar">☰</button>
+  <div id="map"></div>
+
+  <div id="loading">
+    <div class="spinner"></div>
+    <div id="loading-text">Fetching data & calculating…</div>
+  </div>
+
+  <div id="info-panel"></div>
+  <div id="stats-bar"></div>
+
+  <div id="legend">
+    <h4>Probability</h4>
+    <div class="legend-row"><div class="legend-swatch" style="background:hsl(240,70%,50%)"></div> 0–10%</div>
+    <div class="legend-row"><div class="legend-swatch" style="background:hsl(190,75%,45%)"></div> 10–25%</div>
+    <div class="legend-row"><div class="legend-swatch" style="background:hsl(120,65%,40%)"></div> 25–50%</div>
+    <div class="legend-row"><div class="legend-swatch" style="background:hsl(55,90%,50%)"></div> 50–70%</div>
+    <div class="legend-row"><div class="legend-swatch" style="background:hsl(30,95%,50%)"></div> 70–85%</div>
+    <div class="legend-row"><div class="legend-swatch" style="background:hsl(0,90%,45%)"></div> 85–100%</div>
+  </div></div>
+
+<script>
+// ── Theme ─────────────────────────────────────────────────────────────
+const TILES = {
+  dark:  { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',  attr: '© OpenStreetMap © CARTO' },
+  light: { url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', attr: '© OpenStreetMap © CARTO' },
+};
+
+// Read system preference; fall back to dark
+const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+let isDark = prefersDark;
+
+let tileLayer = null;
+
+function applyTheme() {
+  document.body.classList.toggle('light', !isDark);
+  document.getElementById('mode-toggle-btn').textContent = isDark ? '🌙' : '☀️';
+  const t = isDark ? TILES.dark : TILES.light;
+  if (tileLayer) map.removeLayer(tileLayer);
+  tileLayer = L.tileLayer(t.url, { attribution: t.attr, subdomains: 'abcd', maxZoom: 19 }).addTo(map);
+}
+
+function toggleMode() {
+  isDark = !isDark;
+  applyTheme();
+}
+
+// ── Leaflet map ───────────────────────────────────────────────────────
+const map = L.map('map', { zoomControl: false }).setView([39.5, -96], 5);
+L.control.zoom({ position: 'bottomright' }).addTo(map);
+applyTheme();
+
+let gridLayer = null;
+
+// ── Sidebar ───────────────────────────────────────────────────────────
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('collapsed');
+  setTimeout(() => map.invalidateSize(), 250);
+}
+
+// ── Card toggle ───────────────────────────────────────────────────────
+function toggleCard(id) {
+  document.getElementById('card-' + id).classList.toggle('open');
+}
+
+// ── Lookahead ─────────────────────────────────────────────────────────
+function updateLookahead() {
+  const el = document.getElementById('lookahead-weeks');
+  let v = parseInt(el.value, 10);
+  if (isNaN(v) || v < 0) { v = 0; el.value = 0; }
+  const target = new Date();
+  target.setDate(target.getDate() + v * 7);
+  const label = document.getElementById('target-date-label');
+  label.textContent = v === 0
+    ? 'Calculating for today'
+    : `Calculating for ${target.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`;
+}
+updateLookahead();
+
+// ── Resolution ────────────────────────────────────────────────────────
+function updateRes() {
+  const v = +document.getElementById('res-slider').value;
+  document.getElementById('res-value').textContent = v + ' mi';
+  updateCellEstimate();
+}
+function updateCellEstimate() {
+  const v   = +document.getElementById('res-slider').value;
+  const b   = map.getBounds();
+  const mid = (b.getNorth() + b.getSouth()) / 2;
+  const latStep = v / 69.0;
+  const lonStep = v / (69.0 * Math.cos(mid * Math.PI / 180));
+  const cells   = Math.round(((b.getNorth()-b.getSouth()) / latStep) * ((b.getEast()-b.getWest()) / lonStep));
+  document.getElementById('cell-estimate').textContent = `~${cells.toLocaleString()} cells in viewport`;
+}
+map.on('moveend zoomend', updateCellEstimate);
+
+// ── Weight sliders ────────────────────────────────────────────────────
+const LAYER_DEFS = [
+  { id: 'inat',      label: 'iNat Sightings', def: 30 },
+  { id: 'precip',    label: 'Precipitation',  def: 25 },
+  { id: 'fires',     label: 'Fire History',   def: 20 },
+  { id: 'trees',     label: 'Host Trees',     def: 12 },
+  { id: 'season',    label: 'Seasonality',    def:  7 },
+  { id: 'soil',      label: 'Soil',           def:  4 },
+  { id: 'elevation', label: 'Elevation',      def:  2 },
+];
+function buildWeightRows() {
+  const c = document.getElementById('weight-rows');
+  c.innerHTML = '';
+  LAYER_DEFS.forEach(({ id, label, def }) => {
+    const row = document.createElement('div');
+    row.className = 'weight-row';
+    row.innerHTML = `<span class="weight-label">${label}</span>
+      <input type="range" class="weight-slider" id="w-${id}" min="0" max="100" value="${def}" oninput="onWeightChange('${id}')">
+      <span class="weight-val" id="wv-${id}">${def}%</span>`;
+    c.appendChild(row);
+  });
+}
+function onWeightChange(id) {
+  const v = +document.getElementById('w-' + id).value;
+  document.getElementById('wv-' + id).textContent = v + '%';
+  document.getElementById('badge-' + id).textContent = v + '%';
+}
+const ALL_LAYER_IDS = ['inat', 'precip', 'fires', 'trees', 'season', 'elevation', 'soil'];
+
+function soloLayer(id) {
+  ALL_LAYER_IDS.forEach(lid => {
+    document.getElementById('en-' + lid).checked = (lid === id);
+  });
+  onLayerToggle();
+}
+
+function onLayerToggle() { updateCellEstimate(); }
+buildWeightRows();
+
+// ── Color ramp: blue → cyan → green → yellow → orange → red ──────────
+const RAMP = [
+  { t:   0, h: 240, s: 70, l: 50 },  // blue
+  { t:  25, h: 190, s: 75, l: 45 },  // cyan
+  { t:  50, h: 120, s: 65, l: 40 },  // green
+  { t:  70, h:  55, s: 90, l: 50 },  // yellow
+  { t:  85, h:  30, s: 95, l: 50 },  // orange
+  { t: 100, h:   0, s: 90, l: 45 },  // red
+];
+
+function probColor(p) {
+  if (p <= 0) return `hsl(0,0%,52%)`;
+  p = Math.min(100, p);
+  let lo = RAMP[0], hi = RAMP[RAMP.length - 1];
+  for (let i = 0; i < RAMP.length - 1; i++) {
+    if (p >= RAMP[i].t && p <= RAMP[i+1].t) { lo = RAMP[i]; hi = RAMP[i+1]; break; }
+  }
+  const f = lo.t === hi.t ? 1 : (p - lo.t) / (hi.t - lo.t);
+  const h = lo.h + (hi.h - lo.h) * f;
+  const s = lo.s + (hi.s - lo.s) * f;
+  const l = lo.l + (hi.l - lo.l) * f;
+  return `hsl(${h.toFixed(0)},${s.toFixed(0)}%,${l.toFixed(0)}%)`;
+}
+function probOpacity(p) {
+  if (p < 3) return 0;
+  // Power curve: low % nearly invisible, high % moderately opaque
+  return Math.pow(p / 100, 1.4) * 0.65;
+}
+
+// ── Build layer config ────────────────────────────────────────────────
+function buildLayers() {
+  return {
+    inat:      { enabled: document.getElementById('en-inat').checked, years_back: +document.getElementById('inat-years').value, quality: document.getElementById('inat-quality').value, seasonal_weight: document.getElementById('inat-seasonal').checked },
+    precip:    { enabled: document.getElementById('en-precip').checked, time_window: document.getElementById('precip-window').value },
+    fires:     { enabled: document.getElementById('en-fires').checked, years_back: +document.getElementById('fires-years').value, ignore_current_year: document.getElementById('fires-ignore-current').checked },
+    trees:     { enabled: document.getElementById('en-trees').checked, species: [...document.querySelectorAll('.tree-sp:checked')].map(c => c.value) },
+    season:    { enabled: document.getElementById('en-season').checked },
+    elevation: { enabled: document.getElementById('en-elevation').checked },
+    soil:      { enabled: document.getElementById('en-soil').checked },
+  };
+}
+function buildWeights() {
+  const w = {};
+  LAYER_DEFS.forEach(({ id }) => { w[id] = +document.getElementById('w-' + id).value / 100; });
+  return w;
+}
+
+// ── Calculate ─────────────────────────────────────────────────────────
+async function calculate() {
+  const btn = document.getElementById('calc-btn');
+  const loading = document.getElementById('loading');
+  btn.disabled = true;
+  loading.classList.add('visible');
+  document.getElementById('info-panel').style.display = 'none';
+
+  const bounds = map.getBounds();
+  const payload = {
+    bounds: { north: bounds.getNorth(), south: bounds.getSouth(), east: bounds.getEast(), west: bounds.getWest() },
+    resolution: +document.getElementById('res-slider').value,
+    lookahead_weeks: Math.max(0, parseInt(document.getElementById('lookahead-weeks').value, 10) || 0),
+    layers: buildLayers(),
+    weights: buildWeights(),
+  };
+
+  try {
+    const resp = await fetch('/api/calculate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    if (!resp.ok) throw new Error('Server error ' + resp.status);
+    renderGrid(await resp.json());
+  } catch (e) {
+    alert('Calculation failed: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    loading.classList.remove('visible');
+  }
+}
+
+// ── Render grid ───────────────────────────────────────────────────────
+function renderGrid(geojson) {
+  if (gridLayer) map.removeLayer(gridLayer);
+  const meta = geojson.meta || {};
+
+  if (meta.raw_layer) {
+    renderRawLayer(meta.raw_layer, geojson.features || [], meta);
+    return;
+  }
+
+  const all      = geojson.features || [];
+  const features = all.filter(f => f.properties.probability >= 30);
+
+  gridLayer = L.geoJSON(features, {
+    style: f => {
+      const p = f.properties.probability;
+      const c = probColor(p);
+      return { fillColor: c, fillOpacity: probOpacity(p), color: p < 5 ? 'transparent' : c, weight: 0.4, opacity: 0.5 };
+    },
+    onEachFeature: (feat, layer) => {
+      layer.on('mouseover', () => showInfo(feat.properties));
+      layer.on('mouseout',  () => { document.getElementById('info-panel').style.display = 'none'; });
+      layer.on('click',     () => showInfo(feat.properties));
+    },
+  }).addTo(map);
+
+  const sb = document.getElementById('stats-bar');
+  sb.style.display = 'block';
+  const dateStr = meta.target_date
+    ? new Date(meta.target_date + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+    : 'today';
+  sb.textContent = `${features.length} cells shown (≥30%) · ${all.length} total · ${meta.resolution_miles || '?'} mi · ${dateStr}`;
+
+  // Refresh legend swatches with live ramp colors
+  showProbLegend();
+  const stops = [[0,10],[10,25],[25,40],[40,55],[55,75],[75,100]];
+  document.querySelectorAll('.legend-swatch').forEach((el, i) => {
+    el.style.background = probColor((stops[i][0] + stops[i][1]) / 2);
+  });
+}
+
+// ── Raw layer renderers ───────────────────────────────────────────────
+const RAW_LEGENDS = {
+  inat:      { title: 'iNat Sightings', rows: [['#f97316','This year'],['#fb923c','1 year ago'],['#fdba74','2 years ago'],['#c2410c','Older']] },
+  fires:     { title: 'Fire Age', rows: [['#ef4444','Active / <1 yr'],['#f97316','1 yr ago (peak)'],['#fbbf24','2 yrs ago'],['#84cc16','3+ yrs ago']] },
+  precip:    { title: 'Precipitation', rows: [['#ef4444','Dry (<0.5 in)'],['#fbbf24','Low (0.5–1 in)'],['#4ade80','Good (1–3.5 in)'],['#60a5fa','Wet (>3.5 in)']] },
+  trees:     { title: 'Host Trees', rows: [['#22c55e','Elm'],['#06b6d4','Ash'],['#a855f7','Oak'],['#eab308','Tulip Poplar'],['#f97316','Cottonwood']] },
+  soil:      { title: 'Soil pH', rows: [['#ef4444','Acidic (<5.5)'],['#4ade80','Optimal (6–7.5)'],['#60a5fa','Alkaline (>7.5)'],['#d6b896','Unknown']] },
+  elevation: { title: 'Elevation', rows: [['#38bdf8','<300 ft'],['#4ade80','300–1500 ft'],['#22c55e','1500–5000 ft'],['#60a5fa','>5000 ft']] },
+};
+
+function inatColor(yearsAgo) {
+  if (yearsAgo <= 0) return '#f97316';
+  if (yearsAgo === 1) return '#fb923c';
+  if (yearsAgo === 2) return '#fdba74';
+  return '#c2410c';
+}
+
+function renderRawLayer(layerName, features, meta) {
+  const TREE_COLORS = {
+    // Burn-zone conifers — red/orange palette
+    douglas_fir: '#ef4444', pine: '#f97316', white_fir: '#fb923c',
+    // Hardwood species — green/blue/purple palette
+    elm: '#22c55e', ash: '#06b6d4', oak: '#a855f7',
+    tulip_poplar: '#eab308', cottonwood: '#f59e0b',
+    sycamore: '#ec4899', walnut: '#8b5cf6', hickory: '#d97706',
+    maple: '#e11d48', deciduous: '#94a3b8',
+  };
+
+  if (layerName === 'inat') {
+    gridLayer = L.geoJSON(features, {
+      pointToLayer: (feat, latlng) => {
+        const ya = feat.properties.years_ago || 0;
+        return L.circleMarker(latlng, {
+          radius: Math.max(4, 8 - ya),
+          fillColor: inatColor(ya), fillOpacity: Math.max(0.35, 0.9 - ya * 0.18),
+          color: '#00000044', weight: 1,
+        });
+      },
+      onEachFeature: (feat, layer) => {
+        const p = feat.properties;
+        const date = p.observed_on || 'unknown date';
+        const qual = p.quality_grade === 'research' ? '✓ research' : p.quality_grade;
+        layer.bindPopup(
+          `<b>${p.taxon_name}</b><br>${date} · ${qual}<br>` +
+          `by ${p.user || 'unknown'}` +
+          (p.uri ? `<br><a href="${p.uri}" target="_blank">View on iNat ↗</a>` : '')
+        );
+        layer.on('mouseover', function() { this.openPopup(); });
+      },
+    }).addTo(map);
+
+  } else if (layerName === 'fires') {
+    gridLayer = L.geoJSON(features, {
+      style: feat => {
+        const now  = new Date().getFullYear();
+        const age  = now - (feat.properties.year || now);
+        const fill = age <= 0 ? '#ef4444' : age === 1 ? '#f97316' : age === 2 ? '#fbbf24' : '#84cc16';
+        return { fillColor: fill, fillOpacity: 0.45, color: fill, weight: 1, opacity: 0.7 };
+      },
+      onEachFeature: (feat, layer) => {
+        const p = feat.properties;
+        layer.bindPopup(`<b>${p.attr_IncidentName || 'Fire'}</b><br>Year: ${p.year}`);
+        layer.on('mouseover', function() { this.openPopup(); });
+      },
+    }).addTo(map);
+
+  } else if (layerName === 'precip') {
+    gridLayer = L.geoJSON(features, {
+      style: feat => {
+        const inches = feat.properties.precip_in || 0;
+        const fill = inches < 0.5 ? '#ef4444' : inches < 1 ? '#fbbf24' : inches < 3.5 ? '#4ade80' : '#60a5fa';
+        return { fillColor: fill, fillOpacity: 0.65, color: fill, weight: 0.5, opacity: 0.6 };
+      },
+      pointToLayer: (feat, latlng) => {
+        // fallback for point features (no bounds)
+        const inches = feat.properties.precip_in || 0;
+        const fill = inches < 0.5 ? '#ef4444' : inches < 1 ? '#fbbf24' : inches < 3.5 ? '#4ade80' : '#60a5fa';
+        return L.circleMarker(latlng, { radius: 10, fillColor: fill, fillOpacity: 0.8, color: '#00000044', weight: 1 });
+      },
+      onEachFeature: (feat, layer) => {
+        const p = feat.properties;
+        const tf   = p.soil_temp_f != null ? p.soil_temp_f.toFixed(1) + '°F' : 'N/A';
+        const snow = p.snow_in > 0.05 ? ` · snow: ${p.snow_in.toFixed(2)} in` : '';
+        const src  = p.source ? `<br><small style="color:#888">${p.source}</small>` : '';
+        layer.bindPopup(
+          `<b>${(p.precip_in||0).toFixed(2)} in</b> precipitation${snow}<br>Soil temp: ${tf}${src}`
+        );
+        layer.on('mouseover', function() { this.openPopup(); });
+      },
+    }).addTo(map);
+
+  } else if (layerName === 'trees') {
+    gridLayer = L.geoJSON(features, {
+      pointToLayer: (feat, latlng) => {
+        const fill = TREE_COLORS[feat.properties.species] || '#d4a574';
+        return L.circleMarker(latlng, { radius: 6, fillColor: fill, fillOpacity: 0.75, color: '#00000044', weight: 1 });
+      },
+      onEachFeature: (feat, layer) => {
+        const p = feat.properties;
+        const src = p.source ? `<br><span style="color:#888;font-size:10px">${p.source}</span>` : '';
+        layer.bindPopup(`<b>${p.species}</b>${src}`);
+        layer.on('mouseover', function() { this.openPopup(); });
+      },
+    }).addTo(map);
+
+  } else if (layerName === 'soil') {
+    gridLayer = L.geoJSON(features, {
+      pointToLayer: (feat, latlng) => {
+        const ph   = feat.properties.ph;
+        const fill = ph == null ? '#d6b896' : ph < 5.5 ? '#ef4444' : ph < 7.5 ? '#4ade80' : '#60a5fa';
+        return L.circleMarker(latlng, { radius: 10, fillColor: fill, fillOpacity: 0.8, color: '#00000044', weight: 1 });
+      },
+      onEachFeature: (feat, layer) => {
+        const p = feat.properties;
+        layer.bindPopup(`pH: ${p.ph != null ? p.ph.toFixed(1) : 'N/A'}<br>Clay: ${p.clay != null ? p.clay + ' g/kg' : 'N/A'}`);
+        layer.on('mouseover', function() { this.openPopup(); });
+      },
+    }).addTo(map);
+
+  } else if (layerName === 'elevation') {
+    gridLayer = L.geoJSON(features, {
+      pointToLayer: (feat, latlng) => {
+        const ft   = feat.properties.elevation_ft || 0;
+        const fill = ft < 300 ? '#38bdf8' : ft < 1500 ? '#4ade80' : ft < 5000 ? '#22c55e' : '#60a5fa';
+        return L.circleMarker(latlng, { radius: 6, fillColor: fill, fillOpacity: 0.75, color: '#00000044', weight: 1 });
+      },
+      onEachFeature: (feat, layer) => {
+        layer.bindPopup(`Elevation: ${feat.properties.elevation_ft ?? 'N/A'} ft`);
+        layer.on('mouseover', function() { this.openPopup(); });
+      },
+    }).addTo(map);
+  }
+
+  // Update stats bar
+  const sb = document.getElementById('stats-bar');
+  sb.style.display = 'block';
+  sb.textContent = `${features.length} ${layerName} features · raw data view`;
+
+  // Swap legend
+  showRawLegend(layerName);
+}
+
+function showProbLegend() {
+  document.getElementById('legend').innerHTML = `
+    <h4>Probability</h4>
+    <div class="legend-row"><div class="legend-swatch" style="background:hsl(240,70%,50%)"></div> 0–10%</div>
+    <div class="legend-row"><div class="legend-swatch" style="background:hsl(190,75%,45%)"></div> 10–25%</div>
+    <div class="legend-row"><div class="legend-swatch" style="background:hsl(120,65%,40%)"></div> 25–50%</div>
+    <div class="legend-row"><div class="legend-swatch" style="background:hsl(55,90%,50%)"></div> 50–70%</div>
+    <div class="legend-row"><div class="legend-swatch" style="background:hsl(30,95%,50%)"></div> 70–85%</div>
+    <div class="legend-row"><div class="legend-swatch" style="background:hsl(0,90%,45%)"></div> 85–100%</div>`;
+}
+
+function showRawLegend(layerName) {
+  const def = RAW_LEGENDS[layerName] || { title: layerName, rows: [] };
+  const rows = def.rows.map(([color, label]) =>
+    `<div class="legend-row"><div class="legend-swatch" style="background:${color};border-radius:50%"></div>${label}</div>`
+  ).join('');
+  document.getElementById('legend').innerHTML = `<h4>${def.title}</h4>${rows}`;
+}
+
+// ── Hover info ────────────────────────────────────────────────────────
+const SCORE_NAMES = { inat:'iNat Sightings', precip:'Precipitation', fires:'Fire History', trees:'Host Trees', season:'Seasonality', elevation:'Elevation', soil:'Soil' };
+
+function showInfo(props) {
+  const p = props.probability;
+  const scores = props.layer_scores || {};
+  const details = props.details || {};
+  const panel = document.getElementById('info-panel');
+
+  let html = `<h4 style="color:${probColor(p)}">${p}% probability</h4>`;
+
+  if (Object.keys(scores).length) {
+    html += '<div style="margin:6px 0 8px">';
+    for (const [k, v] of Object.entries(scores)) {
+      html += `<div class="score-bar-wrap">
+        <div class="score-bar-label">${SCORE_NAMES[k]||k}</div>
+        <div class="score-bar-track"><div class="score-bar-fill" style="width:${v}%;background:${probColor(v)}"></div></div>
+        <span style="font-size:11px;color:var(--text-muted);min-width:28px;text-align:right">${v}%</span>
+      </div>`;
+    }
+    html += '</div>';
+  }
+  for (const [k, v] of Object.entries(details)) {
+    html += `<div class="info-row"><span class="info-key">${k}</span><span>${v}</span></div>`;
+  }
+
+  panel.innerHTML = html;
+  panel.style.display = 'block';
+}
+
+// ── Init ──────────────────────────────────────────────────────────────
+updateRes();
+</script>
+</body>
+</html>
