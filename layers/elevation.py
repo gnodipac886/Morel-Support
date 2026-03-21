@@ -1,0 +1,56 @@
+"""Elevation layer: OpenTopoData NED 10m batch lookup."""
+
+from __future__ import annotations
+
+import urllib.parse
+
+from utils import fetch_json
+from layers.base import BaseLayer
+
+
+class ElevationLayer(BaseLayer):
+    name      = "elevation"
+    cache_ttl = 72 * 3600
+
+    def fetch(self, bounds: dict, opts: dict, grid=None):
+        cells = grid or []
+        if not cells:
+            return {}
+        centers = [c["center"] for c in cells[:100]]
+        loc_str = "|".join(f"{lat},{lon}" for lat, lon in centers)
+        url     = "https://api.opentopodata.org/v1/ned10m?locations=" + urllib.parse.quote(loc_str)
+        data    = fetch_json(url, timeout=20)
+        out     = {}
+        if data and "results" in data:
+            for i, r in enumerate(data["results"]):
+                if i < len(centers):
+                    lat, lon = centers[i]
+                    out[(round(lat, 6), round(lon, 6))] = r.get("elevation")
+        print(f"[elevation] {len(out)} values")
+        return out
+
+    def to_geojson(self, data) -> list:
+        return [
+            {
+                "type": "Feature",
+                "geometry": {"type": "Point", "coordinates": [lon, lat]},
+                "properties": {"elevation_ft": round(elev * 3.281) if elev else None},
+            }
+            for (lat, lon), elev in (data or {}).items()
+        ]
+
+
+def score_elevation(cell_lat: float, cell_lon: float, elev_map: dict) -> float:
+    key    = (round(cell_lat, 6), round(cell_lon, 6))
+    elev_m = elev_map.get(key)
+    if elev_m is None:
+        return 0.5
+    ft = elev_m * 3.281
+    if   ft < 0:    return 0.10
+    elif ft < 300:  return 0.30
+    elif ft < 600:  return 0.65
+    elif ft < 1500: return 1.00
+    elif ft < 3000: return 0.90
+    elif ft < 5000: return 0.55
+    elif ft < 8000: return 0.25
+    else:           return 0.10
