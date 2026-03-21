@@ -468,12 +468,16 @@ def fetch_fires(bounds, opts):
             break
         fires += _parse_esri_fire_features(data, label, name_fs, ts_fs, yr_f, min_year)
 
-    # 4 — NASA FIRMS (requires FIRMS_MAP_KEY env var)
+    # 4 — NASA FIRMS hotspot detections
     firms_key = os.environ.get('FIRMS_MAP_KEY', '').strip()
     if firms_key:
         fires += _fetch_firms_fires(bounds, min_year, firms_key)
     else:
         print('[fires] FIRMS: skipped (set FIRMS_MAP_KEY env var to enable)')
+
+    # 5 — CAL FIRE incident CSV (California only; covers current season)
+    if ca_bbox:
+        fires += _fetch_calfire_csv(bounds, min_year)
 
     # Optionally drop fires from the current calendar year
     if ignore_current_year:
@@ -490,6 +494,81 @@ def fetch_fires(bounds, opts):
             unique.append(fire)
     print(f"[fires] {len(unique)} perimeters after dedup (min_year={min_year})")
     return unique
+
+
+def _fetch_calfire_csv(bounds, min_year):
+    """Fetch CAL FIRE incident CSV and generate acreage-based proxy polygons.
+
+    Tries the live URL first; falls back to a local mapdataall.csv in the
+    same directory as this script if the URL is unreachable.
+    """
+    url = 'https://incidents.fire.ca.gov/imapdata/mapdataall.csv'
+    local_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'mapdataall.csv')
+    text = None
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'MorelSupport/1.0'})
+        with urllib.request.urlopen(req, timeout=20) as r:
+            text = r.read().decode('utf-8', errors='replace')
+        print('[fires] CAL FIRE CSV: fetched from live URL')
+    except Exception as e:
+        print(f"[fires] CAL FIRE CSV: live URL failed ({e}), trying local fallback")
+        if os.path.exists(local_path):
+            with open(local_path, encoding='utf-8', errors='replace') as f:
+                text = f.read()
+            print(f'[fires] CAL FIRE CSV: loaded from {local_path}')
+        else:
+            print('[fires] CAL FIRE CSV: no local fallback found, skipping')
+            return []
+
+    n, s, e_b, w = bounds['north'], bounds['south'], bounds['east'], bounds['west']
+    fires = []
+    for row in csv.DictReader(io.StringIO(text)):
+        # Parse coordinates; skip stub rows (1,1)
+        try:
+            lat = float(row['incident_latitude'])
+            lon = float(row['incident_longitude'])
+        except (ValueError, TypeError, KeyError):
+            continue
+        if abs(lat) < 2 and abs(lon) < 2:
+            continue
+        if not (s <= lat <= n and w <= lon <= e_b):
+            continue
+
+        # Year filter
+        try:
+            year = int((row.get('incident_dateonly_created') or '')[:4])
+        except (ValueError, TypeError):
+            continue
+        if year < min_year:
+            continue
+
+        try:
+            acres = float(row.get('incident_acres_burned') or 0)
+        except (ValueError, TypeError):
+            acres = 0
+
+        name = row.get('incident_name', '').strip()
+
+        # Circular proxy polygon scaled by acreage (min 0.3 mi, max 30 mi radius)
+        r_miles = max(0.3, min(30.0, math.sqrt(acres / (math.pi * 640)))) if acres > 0 else 0.3
+        r_lat = r_miles / 69.0
+        r_lon = r_miles / (69.0 * math.cos(math.radians(lat)))
+        ring = [
+            [lon + r_lon * math.sin(math.radians(i * 45)),
+             lat + r_lat * math.cos(math.radians(i * 45))]
+            for i in range(9)   # 8-point approximation, closed
+        ]
+
+        fires.append({
+            'feature': {
+                'geometry':   {'type': 'Polygon', 'coordinates': [ring]},
+                'properties': {'attr_IncidentName': name},
+            },
+            'year': year,
+        })
+
+    print(f"[fires] CAL FIRE CSV: {len(fires)} incidents in bbox (min_year={min_year})")
+    return fires
 
 def fetch_trees(bounds, opts):
     """Fetch host tree occurrences from GBIF + LANDFIRE + USFS TreeMap + NLCD."""
