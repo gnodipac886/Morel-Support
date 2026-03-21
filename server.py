@@ -79,26 +79,24 @@ def create_grid(bounds, resolution_miles):
 # ── Data Fetchers ──────────────────────────────────────────────────────────────
 
 def fetch_inat(bounds, opts):
-    """Fetch Morchella (morel) observations from iNaturalist API."""
-    years_back = int(opts.get('years_back', 5))
-    quality    = opts.get('quality', 'research,needs_id')
-    d1 = (datetime.date.today() - datetime.timedelta(days=365 * years_back)).isoformat()
+    """Fetch Morchella (morel) observations from iNaturalist API (all time)."""
+    quality = opts.get('quality', 'research,needs_id')
     params = {
-        'taxon_name':  'Morchella',   # genus of true morels
+        'taxon_name':  'Morchella',
         'nelat':       round(bounds['north'], 4),
         'nelng':       round(bounds['east'],  4),
         'swlat':       round(bounds['south'], 4),
         'swlng':       round(bounds['west'],  4),
         'per_page':    200,
-        'd1':          d1,
         'quality_grade': quality,
         'order_by':    'observed_on',
         'order':       'desc',
     }
     url  = 'https://api.inaturalist.org/v1/observations?' + urllib.parse.urlencode(params)
     data = fetch_json(url)
-    obs  = data.get('results', []) if data else []
-    print(f"[iNat] {len(obs)} observations")
+    obs  = [o for o in (data.get('results', []) if data else [])
+            if not o.get('obscured') and not o.get('geoprivacy')]
+    print(f"[iNat] {len(obs)} observations (non-obscured)")
     return obs
 
 def _fetch_precip_pt(args):
@@ -1471,6 +1469,7 @@ def calculate():
     # Grid cells within urban place radii (OSM Overpass) are dropped before
     # scoring.  Place nodes are cached per-bounds for 72 h.
     urban_filtered = 0
+    place_nodes = []
     if skip_urban and grid:
         # Fetch place nodes once per bbox (cached 72 h).
         # None = network failure → skip filtering so we don't drop all cells.
@@ -1552,12 +1551,65 @@ def calculate():
 
     total_obs = sum(1 for f in features if f['properties']['probability'] >= 30)
     print(f"[calc] {len(features)} cells, {total_obs} cells ≥30%")
+
+    active_places = place_nodes if (skip_urban and place_nodes) else []
+
+    def _urban_point(lat, lon, scale=None):
+        s = urban_scale if scale is None else scale
+        return any(
+            haversine_miles(lat, lon, p['lat'], p['lon']) <= p['radius_miles'] * s
+            for p in active_places
+        )
+
+    def _poly_centroid(coords):
+        """Return (lat, lon) centroid of the first ring of a Polygon coordinate array."""
+        ring = coords[0]
+        lon = sum(pt[0] for pt in ring) / len(ring)
+        lat = sum(pt[1] for pt in ring) / len(ring)
+        return lat, lon
+
+    overlays = {}
+    for ov_key in ('inat', 'fires'):
+        if not (layers.get(ov_key, {}).get('enabled') and ov_key in layer_data):
+            continue
+        raw = _build_raw_geojson(ov_key, layer_data[ov_key])
+        if not active_places:
+            overlays[ov_key] = raw
+            continue
+        filtered = []
+        for feat in raw:
+            geom = feat.get('geometry', {})
+            gtype = geom.get('type', '')
+            coords = geom.get('coordinates', [])
+            if gtype == 'Point':
+                lon, lat = coords[0], coords[1]
+            elif gtype == 'Polygon':
+                lat, lon = _poly_centroid(coords)
+            elif gtype == 'MultiPolygon':
+                lat, lon = _poly_centroid(coords[0])
+            else:
+                filtered.append(feat)
+                continue
+            # iNat sightings use a fixed 2-mile hard cap so only observations
+            # right in the urban core are dropped; fires use the full scale.
+            if ov_key == 'inat':
+                is_urban = any(
+                    haversine_miles(lat, lon, p['lat'], p['lon']) <= min(p['radius_miles'] * urban_scale, 5.0)
+                    for p in active_places
+                )
+            else:
+                is_urban = _urban_point(lat, lon)
+            if not is_urban:
+                filtered.append(feat)
+        overlays[ov_key] = filtered
+
     result = {
         'type':     'FeatureCollection',
         'features': features,
         'meta':     {'cells': len(features), 'resolution_miles': resolution,
                      'target_date': target_date.isoformat(),
-                     'urban_filtered': urban_filtered},
+                     'urban_filtered': urban_filtered,
+                     'overlays': overlays},
     }
     results_cache_set(phash, bounds, result)
     return jsonify(result)
