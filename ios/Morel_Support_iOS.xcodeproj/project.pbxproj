@@ -1,0 +1,426 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		03427CFF18E30C719057DBE0 /* LayerProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 205F3D419EB8A6B034DA462C /* LayerProtocol.swift */; };
+		0C52914F26C0F0289E9BF624 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 589037CA77C2B7594EDC7886 /* ContentView.swift */; };
+		1748E2889E742044936C6402 /* UrbanFilterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83CEFF6D56EF6C99D03C2D43 /* UrbanFilterService.swift */; };
+		1C7432AD4D48717772E350CF /* PrecipitationLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 942F1A9B616BBC3976A901C9 /* PrecipitationLayer.swift */; };
+		1EB9482957F8FAE230A84038 /* SeasonLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7384E349E088D52CEA947B41 /* SeasonLayer.swift */; };
+		3209A975D9CB3FBFFA77620F /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F5CF80D84F99018AF3A5175C /* UIKit.framework */; };
+		32FD4BA905CBA1A1BBDF90A8 /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E0DF76E371D0B1C349FA840 /* Utils.swift */; };
+		37249CDD75839B28E589A03D /* GridService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E91889C1E4FFCED7CC04CB5 /* GridService.swift */; };
+		3CA2D7EC764DFD2BB22091DC /* LayerRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDB9E45EC59710989F6A7DAE /* LayerRegistry.swift */; };
+		3F8C9132279C497FD820CFEA /* LayerData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72646DD5314780A89CCF333C /* LayerData.swift */; };
+		42643744119AEA0CF5205E9F /* ControlsBottomSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B7505A8E747C3E074BBA0D /* ControlsBottomSheet.swift */; };
+		5818D60B2EF77AAE941F589D /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CBE2416012B9EF9A4982FE0 /* Foundation.framework */; };
+		5C4074B38ABA9368097F0D56 /* LayerCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04C5702F7E03B4F2103D4CD1 /* LayerCache.swift */; };
+		79FE4FFBE9AB2EF5986EFD8A /* ProbabilityResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23C941C391DA5BFC4983A8ED /* ProbabilityResult.swift */; };
+		845DC458ECB62A87D4568CDC /* NetworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF30EB274275FB420B7300AA /* NetworkService.swift */; };
+		8677394F9E9A057BF42EEDB3 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B7C69B9FBEA0D0D30D74B431 /* Assets.xcassets */; };
+		88169D64480EAC87A692F77C /* TreesLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B9967959CE0B043C3D7CCDD /* TreesLayer.swift */; };
+		8A0FCAC7C2DDFD421C97E806 /* ScoringEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1C702C85E8998BF485C7479 /* ScoringEngine.swift */; };
+		8BDF1B80D70C2E43EE31E384 /* InatLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB53D9B92A1CE76B869E4B35 /* InatLayer.swift */; };
+		92FE260818A349C6E3A3290A /* PieWeightChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CBFE580EF624C21CF78F510 /* PieWeightChart.swift */; };
+		9CC61564C31C242CAE5F507C /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EA5B77C1C86B0F2BD13C0C3E /* SwiftUI.framework */; };
+		B0F2BF1D8F59572B173C1C90 /* SoilLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63601C835D8225517A26DAA8 /* SoilLayer.swift */; };
+		B1F89F00567377AA5AD76116 /* GridCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 351D88B5AAE6577C4FAE8480 /* GridCell.swift */; };
+		B6E1A2D785A08ED4D777203F /* MorelSupportApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 831604C409DD2BC957A9BD5C /* MorelSupportApp.swift */; };
+		C23AC6B04A538A4835908950 /* FiresLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF650459D71980BA1CF868E9 /* FiresLayer.swift */; };
+		C2A220311F7A8453AE0301DD /* MapKitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CF4759CFA2AA6E62D25BC53 /* MapKitView.swift */; };
+		CD5390A5A5E43C5C3F5A6381 /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F7BDDF4C46DBFD78443DD960 /* MapKit.framework */; };
+		DDE439B20995047586E0B9AC /* MapViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F6D2F121CC2048FA3A5FE9C /* MapViewModel.swift */; };
+		E5921BE602C35816083DCDED /* OceanFilterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5288E8824700F6CA12A0D7AD /* OceanFilterService.swift */; };
+		E5F55D6DF8B0BB2E814C3D6A /* Bounds.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E08313A596A8344E8094326 /* Bounds.swift */; };
+		F4E8D305EC699E40C97D2A51 /* CoreLocation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5E581200CCC236C6A0F3B023 /* CoreLocation.framework */; };
+		F88E5C83E455AE115024379E /* ElevationLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE361D132A3D89C86BAE21F6 /* ElevationLayer.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		04C5702F7E03B4F2103D4CD1 /* LayerCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LayerCache.swift; path = Services/LayerCache.swift; sourceTree = "<group>"; };
+		1CBFE580EF624C21CF78F510 /* PieWeightChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PieWeightChart.swift; path = Views/PieWeightChart.swift; sourceTree = "<group>"; };
+		205F3D419EB8A6B034DA462C /* LayerProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LayerProtocol.swift; path = Layers/LayerProtocol.swift; sourceTree = "<group>"; };
+		23C941C391DA5BFC4983A8ED /* ProbabilityResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProbabilityResult.swift; path = Models/ProbabilityResult.swift; sourceTree = "<group>"; };
+		351D88B5AAE6577C4FAE8480 /* GridCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = GridCell.swift; path = Models/GridCell.swift; sourceTree = "<group>"; };
+		39B7505A8E747C3E074BBA0D /* ControlsBottomSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ControlsBottomSheet.swift; path = Views/ControlsBottomSheet.swift; sourceTree = "<group>"; };
+		3F6D2F121CC2048FA3A5FE9C /* MapViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MapViewModel.swift; path = ViewModels/MapViewModel.swift; sourceTree = "<group>"; };
+		4CBE2416012B9EF9A4982FE0 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		5288E8824700F6CA12A0D7AD /* OceanFilterService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OceanFilterService.swift; path = Services/OceanFilterService.swift; sourceTree = "<group>"; };
+		589037CA77C2B7594EDC7886 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ContentView.swift; path = App/ContentView.swift; sourceTree = "<group>"; };
+		5CF4759CFA2AA6E62D25BC53 /* MapKitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MapKitView.swift; path = Views/MapKitView.swift; sourceTree = "<group>"; };
+		5E581200CCC236C6A0F3B023 /* CoreLocation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreLocation.framework; path = System/Library/Frameworks/CoreLocation.framework; sourceTree = SDKROOT; };
+		63601C835D8225517A26DAA8 /* SoilLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SoilLayer.swift; path = Layers/SoilLayer.swift; sourceTree = "<group>"; };
+		6B9967959CE0B043C3D7CCDD /* TreesLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TreesLayer.swift; path = Layers/TreesLayer.swift; sourceTree = "<group>"; };
+		72646DD5314780A89CCF333C /* LayerData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LayerData.swift; path = Models/LayerData.swift; sourceTree = "<group>"; };
+		7384E349E088D52CEA947B41 /* SeasonLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SeasonLayer.swift; path = Layers/SeasonLayer.swift; sourceTree = "<group>"; };
+		7E08313A596A8344E8094326 /* Bounds.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Bounds.swift; path = Models/Bounds.swift; sourceTree = "<group>"; };
+		7E0DF76E371D0B1C349FA840 /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Utils.swift; path = Services/Utils.swift; sourceTree = "<group>"; };
+		831604C409DD2BC957A9BD5C /* MorelSupportApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MorelSupportApp.swift; path = App/MorelSupportApp.swift; sourceTree = "<group>"; };
+		83CEFF6D56EF6C99D03C2D43 /* UrbanFilterService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = UrbanFilterService.swift; path = Services/UrbanFilterService.swift; sourceTree = "<group>"; };
+		942F1A9B616BBC3976A901C9 /* PrecipitationLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PrecipitationLayer.swift; path = Layers/PrecipitationLayer.swift; sourceTree = "<group>"; };
+		9E91889C1E4FFCED7CC04CB5 /* GridService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = GridService.swift; path = Services/GridService.swift; sourceTree = "<group>"; };
+		AE361D132A3D89C86BAE21F6 /* ElevationLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ElevationLayer.swift; path = Layers/ElevationLayer.swift; sourceTree = "<group>"; };
+		AF30EB274275FB420B7300AA /* NetworkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NetworkService.swift; path = Services/NetworkService.swift; sourceTree = "<group>"; };
+		B7C69B9FBEA0D0D30D74B431 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		BF650459D71980BA1CF868E9 /* FiresLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FiresLayer.swift; path = Layers/FiresLayer.swift; sourceTree = "<group>"; };
+		CFD45D47CEBC1FA7AE380071 /* Morel_Support_iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Morel_Support_iOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DB53D9B92A1CE76B869E4B35 /* InatLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = InatLayer.swift; path = Layers/InatLayer.swift; sourceTree = "<group>"; };
+		E1C702C85E8998BF485C7479 /* ScoringEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScoringEngine.swift; path = Services/ScoringEngine.swift; sourceTree = "<group>"; };
+		EA5B77C1C86B0F2BD13C0C3E /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		EFF5CA97C7C128703E816F73 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		F5CF80D84F99018AF3A5175C /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
+		F7BDDF4C46DBFD78443DD960 /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
+		FDB9E45EC59710989F6A7DAE /* LayerRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LayerRegistry.swift; path = Layers/LayerRegistry.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		80FD2B94D3307C256DF5DCF8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5818D60B2EF77AAE941F589D /* Foundation.framework in Frameworks */,
+				3209A975D9CB3FBFFA77620F /* UIKit.framework in Frameworks */,
+				9CC61564C31C242CAE5F507C /* SwiftUI.framework in Frameworks */,
+				CD5390A5A5E43C5C3F5A6381 /* MapKit.framework in Frameworks */,
+				F4E8D305EC699E40C97D2A51 /* CoreLocation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0A85897F1A32FE9B91C081CD = {
+			isa = PBXGroup;
+			children = (
+				8F347D082E774B22F99DEF9C /* Morel_Support_iOS */,
+				B88D7E26791946AEFDCC8BB7 /* Products */,
+				5882352A2F6F8BAB00BEC838 /* Recovered References */,
+			);
+			sourceTree = "<group>";
+		};
+		5104F2F3AEB5017B8238A33A /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				3F6D2F121CC2048FA3A5FE9C /* MapViewModel.swift */,
+			);
+			name = ViewModels;
+			sourceTree = "<group>";
+		};
+		5882352A2F6F8BAB00BEC838 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				4CBE2416012B9EF9A4982FE0 /* Foundation.framework */,
+				F5CF80D84F99018AF3A5175C /* UIKit.framework */,
+				EA5B77C1C86B0F2BD13C0C3E /* SwiftUI.framework */,
+				F7BDDF4C46DBFD78443DD960 /* MapKit.framework */,
+				5E581200CCC236C6A0F3B023 /* CoreLocation.framework */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
+		5CE1D1D3BEEDBFEF01A0C698 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				9E91889C1E4FFCED7CC04CB5 /* GridService.swift */,
+				04C5702F7E03B4F2103D4CD1 /* LayerCache.swift */,
+				AF30EB274275FB420B7300AA /* NetworkService.swift */,
+				5288E8824700F6CA12A0D7AD /* OceanFilterService.swift */,
+				E1C702C85E8998BF485C7479 /* ScoringEngine.swift */,
+				83CEFF6D56EF6C99D03C2D43 /* UrbanFilterService.swift */,
+				7E0DF76E371D0B1C349FA840 /* Utils.swift */,
+			);
+			name = Services;
+			sourceTree = "<group>";
+		};
+		786D5CF0E47989902CCEE5DC /* Layers */ = {
+			isa = PBXGroup;
+			children = (
+				AE361D132A3D89C86BAE21F6 /* ElevationLayer.swift */,
+				BF650459D71980BA1CF868E9 /* FiresLayer.swift */,
+				DB53D9B92A1CE76B869E4B35 /* InatLayer.swift */,
+				205F3D419EB8A6B034DA462C /* LayerProtocol.swift */,
+				FDB9E45EC59710989F6A7DAE /* LayerRegistry.swift */,
+				942F1A9B616BBC3976A901C9 /* PrecipitationLayer.swift */,
+				7384E349E088D52CEA947B41 /* SeasonLayer.swift */,
+				63601C835D8225517A26DAA8 /* SoilLayer.swift */,
+				6B9967959CE0B043C3D7CCDD /* TreesLayer.swift */,
+			);
+			name = Layers;
+			sourceTree = "<group>";
+		};
+		8F347D082E774B22F99DEF9C /* Morel_Support_iOS */ = {
+			isa = PBXGroup;
+			children = (
+				AE5F13C787F878E3024B8AE5 /* App */,
+				786D5CF0E47989902CCEE5DC /* Layers */,
+				8F748217B3792E8FE1635A32 /* Models */,
+				5CE1D1D3BEEDBFEF01A0C698 /* Services */,
+				5104F2F3AEB5017B8238A33A /* ViewModels */,
+				ABD63DCCBC2570E03F18B619 /* Views */,
+				B7C69B9FBEA0D0D30D74B431 /* Assets.xcassets */,
+				EFF5CA97C7C128703E816F73 /* Info.plist */,
+			);
+			path = Morel_Support_iOS;
+			sourceTree = "<group>";
+		};
+		8F748217B3792E8FE1635A32 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				7E08313A596A8344E8094326 /* Bounds.swift */,
+				351D88B5AAE6577C4FAE8480 /* GridCell.swift */,
+				72646DD5314780A89CCF333C /* LayerData.swift */,
+				23C941C391DA5BFC4983A8ED /* ProbabilityResult.swift */,
+			);
+			name = Models;
+			sourceTree = "<group>";
+		};
+		ABD63DCCBC2570E03F18B619 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				39B7505A8E747C3E074BBA0D /* ControlsBottomSheet.swift */,
+				5CF4759CFA2AA6E62D25BC53 /* MapKitView.swift */,
+				1CBFE580EF624C21CF78F510 /* PieWeightChart.swift */,
+			);
+			name = Views;
+			sourceTree = "<group>";
+		};
+		AE5F13C787F878E3024B8AE5 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				589037CA77C2B7594EDC7886 /* ContentView.swift */,
+				831604C409DD2BC957A9BD5C /* MorelSupportApp.swift */,
+			);
+			name = App;
+			sourceTree = "<group>";
+		};
+		B88D7E26791946AEFDCC8BB7 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				CFD45D47CEBC1FA7AE380071 /* Morel_Support_iOS.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0A1D1B958922F39EFB59FFBA /* Morel_Support_iOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 27C7739C6FAF283872814F69 /* Build configuration list for PBXNativeTarget "Morel_Support_iOS" */;
+			buildPhases = (
+				7EE609159AC086BAB15FF998 /* Sources */,
+				80FD2B94D3307C256DF5DCF8 /* Frameworks */,
+				A2892AFC2D88060C0AA91373 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Morel_Support_iOS;
+			packageProductDependencies = (
+			);
+			productName = Morel_Support_iOS;
+			productReference = CFD45D47CEBC1FA7AE380071 /* Morel_Support_iOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		1781F676DEDF5767F3243DB0 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					0A1D1B958922F39EFB59FFBA = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = 22B2B3FE2898D04F220DBC58 /* Build configuration list for PBXProject "Morel_Support_iOS" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 0A85897F1A32FE9B91C081CD;
+			packageReferences = (
+			);
+			productRefGroup = B88D7E26791946AEFDCC8BB7 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				0A1D1B958922F39EFB59FFBA /* Morel_Support_iOS */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A2892AFC2D88060C0AA91373 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8677394F9E9A057BF42EEDB3 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		7EE609159AC086BAB15FF998 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0C52914F26C0F0289E9BF624 /* ContentView.swift in Sources */,
+				B6E1A2D785A08ED4D777203F /* MorelSupportApp.swift in Sources */,
+				F88E5C83E455AE115024379E /* ElevationLayer.swift in Sources */,
+				C23AC6B04A538A4835908950 /* FiresLayer.swift in Sources */,
+				8BDF1B80D70C2E43EE31E384 /* InatLayer.swift in Sources */,
+				03427CFF18E30C719057DBE0 /* LayerProtocol.swift in Sources */,
+				3CA2D7EC764DFD2BB22091DC /* LayerRegistry.swift in Sources */,
+				1C7432AD4D48717772E350CF /* PrecipitationLayer.swift in Sources */,
+				1EB9482957F8FAE230A84038 /* SeasonLayer.swift in Sources */,
+				B0F2BF1D8F59572B173C1C90 /* SoilLayer.swift in Sources */,
+				88169D64480EAC87A692F77C /* TreesLayer.swift in Sources */,
+				E5F55D6DF8B0BB2E814C3D6A /* Bounds.swift in Sources */,
+				B1F89F00567377AA5AD76116 /* GridCell.swift in Sources */,
+				3F8C9132279C497FD820CFEA /* LayerData.swift in Sources */,
+				79FE4FFBE9AB2EF5986EFD8A /* ProbabilityResult.swift in Sources */,
+				37249CDD75839B28E589A03D /* GridService.swift in Sources */,
+				5C4074B38ABA9368097F0D56 /* LayerCache.swift in Sources */,
+				845DC458ECB62A87D4568CDC /* NetworkService.swift in Sources */,
+				E5921BE602C35816083DCDED /* OceanFilterService.swift in Sources */,
+				8A0FCAC7C2DDFD421C97E806 /* ScoringEngine.swift in Sources */,
+				1748E2889E742044936C6402 /* UrbanFilterService.swift in Sources */,
+				32FD4BA905CBA1A1BBDF90A8 /* Utils.swift in Sources */,
+				DDE439B20995047586E0B9AC /* MapViewModel.swift in Sources */,
+				42643744119AEA0CF5205E9F /* ControlsBottomSheet.swift in Sources */,
+				C2A220311F7A8453AE0301DD /* MapKitView.swift in Sources */,
+				92FE260818A349C6E3A3290A /* PieWeightChart.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		04C00083D3F919C8301DDD79 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = WAVUC34TEZ;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Morel_Support_iOS/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ericdong.morelsupport;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		56EA2DDD7EA6B62E92CB9329 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		B680BFF7B1C531FDD4439D32 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = WAVUC34TEZ;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Morel_Support_iOS/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ericdong.morelsupport;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F8C11F1832EF84A327194F08 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		22B2B3FE2898D04F220DBC58 /* Build configuration list for PBXProject "Morel_Support_iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				56EA2DDD7EA6B62E92CB9329 /* Debug */,
+				F8C11F1832EF84A327194F08 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		27C7739C6FAF283872814F69 /* Build configuration list for PBXNativeTarget "Morel_Support_iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B680BFF7B1C531FDD4439D32 /* Debug */,
+				04C00083D3F919C8301DDD79 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 1781F676DEDF5767F3243DB0 /* Project object */;
+}
