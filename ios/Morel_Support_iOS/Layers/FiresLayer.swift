@@ -12,7 +12,7 @@ struct FiresLayer: Layer {
 
         let calendar = Calendar.current
         let currentYear = calendar.component(.year, from: Date())
-        let minYear = currentYear - max(1, yearsBack)
+        let minYear = currentYear - yearsBack
 
         let geomEnvelope = "\(bounds.west),\(bounds.south),\(bounds.east),\(bounds.north)"
 
@@ -41,13 +41,14 @@ struct FiresLayer: Layer {
 
         var endpoints: [EndpointDef] = []
 
-        // WFIGS YTD (current season) — most up-to-date perimeters
+        // WFIGS perimeters — three services mirror the Python backend
         let wfigNameFields = ["poly_IncidentName", "attr_IncidentName", "IncidentName", "INCIDENTNAME"]
         let wfigTSFields   = ["poly_PolygonDateTime", "poly_DateCurrent",
                               "attr_FireDiscoveryDateTime", "FireDiscoveryDateTime", "DISCOVERYDATETIME"]
         let wfigServices = [
-            "WFIGS_Interagency_Perimeters_YTD",
             "WFIGS_Interagency_Perimeters",
+            "WFIGS_Interagency_Perimeters_YearToDate",
+            "WFIGS_Interagency_Perimeters_Current",
         ]
         for svc in wfigServices {
             let urlStr = "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/\(svc)/FeatureServer/0/query"
@@ -57,10 +58,10 @@ struct FiresLayer: Layer {
             }
         }
 
-        // USFS EDW historic perimeters — covers multi-year history
+        // USFS EDW perimeters — matches Python backend endpoints
         let usfsEndpoints: [(String, String, [String], String?)] = [
-            ("https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_FirePerimeterHistoric_01/MapServer/0/query",
-             "USFS/EDW_FirePerimeterHistoric", ["FIRE_NAME"], "FIRE_YEAR"),
+            ("https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_FireOccurrenceAndPerimeter_01/MapServer/0/query",
+             "USFS/EDW_FireOccurrenceAndPerimeter", ["FIRE_NAME"], "FIRE_YEAR"),
             ("https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_MTBS_01/MapServer/0/query",
              "USFS/EDW_MTBS", ["Fire_Name", "FIRE_NAME"], "Year"),
         ]
@@ -279,6 +280,9 @@ func scoreFires(
             let dist = haversineMilesF(cellLat, cellLon, nearestLat, nearestLon)
             // Score falls off linearly to zero at 20 miles from the perimeter edge
             score = ageScore * max(0.0, 1.0 - dist / 20.0)
+            if score > 0 {
+                count += 1
+            }
         }
 
         best = max(best, score)

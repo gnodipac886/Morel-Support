@@ -184,87 +184,69 @@ Press `⌘R`. The app fetches all layer data directly from public APIs — no ba
 
 ### Web app
 
-#### 1. Navigate to your area
+#### 1. Open the app
 
-Pan and zoom the Leaflet map to the region you want to survey. A tighter viewport means a finer grid and more precise results.
+Run `python app.py` and the browser opens automatically at `http://localhost:8081`. You'll see the full-screen map with the layer sidebar on the left.
 
-```
-┌─────────────────────────────────┐
-│  Sidebar         Map            │
-│  ┌───────────┐  ┌─────────────┐ │
-│  │ 🍄 Morel  │  │             │ │
-│  │ Support   │  │  Navigate   │ │
-│  │           │  │  here first │ │
-│  │ [layers]  │  │             │ │
-│  │ [weights] │  │             │ │
-│  │           │  │             │ │
-│  │[CALCULATE]│  │             │ │
-│  └───────────┘  └─────────────┘ │
-└─────────────────────────────────┘
-```
+![Landing page](docs/screenshots/01_landing.png)
 
-#### 2. Choose your layers
+#### 2. Navigate to your target area
 
-Each card in the sidebar controls one data layer. Toggle layers on/off with the switch on the right. Use **Solo** to view only that layer's raw data on the map — useful for ground-truthing what the API is returning.
+Pan and zoom to the region you want to survey. A tighter viewport means fewer cells and faster results — a 200-mile-wide area at 5 mi resolution generates roughly 1,000–2,000 cells.
 
-| Layer | What the solo view shows |
+![Zoomed to the Washington/Oregon Cascades](docs/screenshots/02_navigate.png)
+
+#### 3. Configure layers in the sidebar
+
+Each card in the sidebar controls one data layer. Toggle layers on/off with the switch on the right. Use **solo** to view only that layer's raw data on the map — useful for ground-truthing what the APIs are returning.
+
+![Sidebar with layer cards expanded](docs/screenshots/03_sidebar.png)
+
+Key options per layer:
+
+| Layer | Notable options |
 |---|---|
-| iNat | Purple pins — past Morchella observations |
-| Precipitation | Color-coded grid cells by recent rainfall |
-| Fires | Red polygons — fire perimeters with year label |
-| Trees | Green dots — host tree observations |
-| Elevation | Grid cells colored by altitude band |
-| Soil | Grid cells colored by pH |
+| **iNat** | Quality grade filter; seasonal weighting on/off |
+| **Precipitation** | Time window (`1w`, `2w`, `1m`, `3m`) |
+| **Fire History** | Years back (1–5); ignore current-year fires |
+| **Host Trees** | Species checkboxes (burn-zone conifers vs hardwoods) |
+| **Seasonality** | No options — pure lat/date calculation |
+| **Soil / Elevation** | Enable/disable only |
 
-#### 3. Tune the time window (Precipitation)
+#### 4. Adjust layer weights
 
-Under the **Precipitation** card, set how many days back to look. Common values:
+Scroll the sidebar down to the **Layer Weights** pie chart. Drag any slice to redistribute scoring weight between layers in real time. The percentages update as you drag. Changes take effect on the next Calculate run.
 
-- `1w` — last 7 days (good after a recent rain event)
-- `2w` — last 14 days (default, balanced)
-- `1m` — last 30 days (dry spell assessment)
+![Pie chart weight controls](docs/screenshots/04_weights.png)
 
-#### 4. Adjust fire history (Fires)
+Other settings below the chart:
 
-Set **Years back** to control how far back fire perimeters are pulled. The scoring curve peaks at 1 year post-fire and drops to 15% at 5+ years, so extending this beyond 3–4 years rarely changes results much.
+- **Grid resolution** — cell size in miles (1–20 mi). Finer = slower, more detail.
+- **Date look-ahead** — shift the target date forward (weeks). Use 2–4 weeks to preview upcoming conditions.
+- **Skip urban areas** — removes cells within city/town radii sourced from OpenStreetMap.
 
-#### 5. Set the look-ahead date
+#### 5. Hit Calculate
 
-**Lookahead weeks** shifts the target date forward. Set it to 2–4 weeks to see where conditions are likely to be prime when you plan to go out.
+Click **Calculate Probability** at the bottom of the sidebar. The app fetches all enabled layers in parallel, then scores every grid cell. Results appear as colored squares on the map.
 
-#### 6. Adjust the urban filter
+![Heatmap results over the Cascades](docs/screenshots/05_heatmap.png)
 
-**Urban exclusion** removes grid cells within city and town boundaries (sourced from OpenStreetMap). Drag the scale slider to tighten or widen the exclusion radius — useful when foraging suburban forest edges.
+Color scale (bottom-right legend):
 
-#### 7. Adjust weights
+| Color | Probability |
+|---|---|
+| Dark green | ≥ 75% — high |
+| Teal | 50–74% — moderate |
+| Yellow | 25–49% — low |
+| Gray | < 25% — very low |
 
-Drag the slices of the pie chart to redistribute scoring weight between layers. Changes take effect on the next **Calculate** run.
+iNaturalist sightings (orange pins) and fire perimeters (red polygons) are overlaid automatically when those layers are enabled.
 
-#### 8. Hit Calculate
+#### 6. Read the cell detail panel
 
-```
-[ 🍄 Calculate ]
-```
+Hover over or click any grid cell to open the detail panel in the top-right corner of the map. It shows the overall probability, a per-layer score breakdown, and the raw data values that drove the score.
 
-The button is at the bottom of the sidebar. Results appear as colored grid squares:
-
-```
-Color scale:
-  ████  ≥ 75%   High probability
-  ████  50–74%  Moderate
-  ████  25–49%  Low
-  ████  < 25%   Very low
-```
-
-Click any grid cell to see its full per-layer breakdown.
-
-#### 9. Read the cell detail panel
-
-Clicking a cell opens a popup showing:
-
-- Overall probability %
-- Score for each active layer
-- Data details: rainfall inches, soil temp, # of nearby iNat sightings, fire count, etc.
+![Cell detail panel showing 52% probability](docs/screenshots/06_cell_popup.png)
 
 ---
 

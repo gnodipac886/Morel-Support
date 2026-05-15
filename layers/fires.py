@@ -307,6 +307,8 @@ def score_fires(cell_lat, cell_lon, cell_bounds, fires, _opts):
                 nearest_lon = max(fw, min(fe, cell_lon))
                 dist  = haversine_miles(cell_lat, cell_lon, nearest_lat, nearest_lon)
                 score = age * max(0.0, 1.0 - dist / 20.0)
+                if score > 0:
+                    count += 1
             best = max(best, score)
         except Exception:
             continue

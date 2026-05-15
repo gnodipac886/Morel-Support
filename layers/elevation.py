@@ -2,10 +2,26 @@
 
 from __future__ import annotations
 
+import concurrent.futures
 import urllib.parse
 
 from utils import fetch_json
 from layers.base import BaseLayer
+
+_BATCH = 100   # OpenTopoData hard limit per request
+
+
+def _fetch_elevation_batch(batch: list) -> dict:
+    loc_str = "|".join(f"{lat},{lon}" for lat, lon in batch)
+    url  = "https://api.opentopodata.org/v1/ned10m?locations=" + urllib.parse.quote(loc_str)
+    data = fetch_json(url, timeout=20)
+    out  = {}
+    if data and "results" in data:
+        for i, r in enumerate(data["results"]):
+            if i < len(batch):
+                lat, lon = batch[i]
+                out[(round(lat, 6), round(lon, 6))] = r.get("elevation")
+    return out
 
 
 class ElevationLayer(BaseLayer):
@@ -16,17 +32,14 @@ class ElevationLayer(BaseLayer):
         cells = grid or []
         if not cells:
             return {}
-        centers = [c["center"] for c in cells[:100]]
-        loc_str = "|".join(f"{lat},{lon}" for lat, lon in centers)
-        url     = "https://api.opentopodata.org/v1/ned10m?locations=" + urllib.parse.quote(loc_str)
-        data    = fetch_json(url, timeout=20)
-        out     = {}
-        if data and "results" in data:
-            for i, r in enumerate(data["results"]):
-                if i < len(centers):
-                    lat, lon = centers[i]
-                    out[(round(lat, 6), round(lon, 6))] = r.get("elevation")
-        print(f"[elevation] {len(out)} values")
+        centers = [c["center"] for c in cells]
+        batches = [centers[i:i+_BATCH] for i in range(0, len(centers), _BATCH)]
+        out = {}
+        # Batches are independent HTTP requests — parallelise them.
+        with concurrent.futures.ThreadPoolExecutor(max_workers=min(8, len(batches))) as pool:
+            for result in pool.map(_fetch_elevation_batch, batches):
+                out.update(result)
+        print(f"[elevation] {len(out)} / {len(centers)} values ({len(batches)} batches)")
         return out
 
     def to_geojson(self, data) -> list:

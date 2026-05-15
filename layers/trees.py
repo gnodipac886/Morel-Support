@@ -33,10 +33,11 @@ BURN_SPECIES = frozenset({"douglas_fir", "pine", "white_fir"})
 
 # NLCD class → species mapping (MRLC classes)
 _NLCD_SPECIES = {
-    41: "deciduous",
-    43: "deciduous",
-    90: "cottonwood",
-    95: "deciduous",
+    41: "deciduous",   # Deciduous Forest
+    42: "pine",        # Evergreen Forest (pine/fir — relevant to burn-zone scoring)
+    43: "deciduous",   # Mixed Forest
+    90: "cottonwood",  # Woody Wetlands
+    95: "deciduous",   # Emergent Herbaceous Wetlands
 }
 
 
@@ -282,6 +283,8 @@ class TreesLayer(BaseLayer):
         "douglas_fir":  5284895,
         "pine":         2684241,
         "white_fir":    2684222,
+        # sycamore (Platanus) and hickory (Carya) have no verified GBIF genus key;
+        # they are detected via LANDFIRE EVT and USFS TreeMap only.
     }
 
     def fetch(self, bounds: dict, opts: dict, grid=None):
